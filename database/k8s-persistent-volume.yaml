@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sqlite-pv
+  labels:
+    app: ltplabs-database
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/mnt/data/ltplabs/database"
+    type: DirectoryOrCreate
+  claimRef:
+    name: sqlite-pvc
+    namespace: default

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: ecatalog
+data:
+  # URL do API Gateway (service interno Kubernetes)
+  VITE_API_URL: "http://api-gateway.ecatalog.svc.cluster.local:8000"

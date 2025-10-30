@@ -1,0 +1,45 @@
+# .dockerignore for database Docker image
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+API_GATEWAY_INTEGRATION.md
+*.md
+
+# Kubernetes files
+k8s-*.yaml
+
+# Scripts (not needed in image)
+build-database.sh
+deploy-database.sh
+test-database.sh
+backup-database.sh
+
+# Test data
+test-data/
+backups/
+*.db
+*.db-*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp

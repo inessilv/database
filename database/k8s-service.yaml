@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ltplabs-database-service
+  namespace: default
+  labels:
+    app: ltplabs-database
+    component: database
+spec:
+  type: ClusterIP  # Internal access only
+  selector:
+    app: ltplabs-database
+  ports:
+  - name: health
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  # Optional: Enable headless service for direct pod access
+  # clusterIP: None
+  sessionAffinity: ClientIP  # Ensure same client goes to same pod (important for SQLite)
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+
+---
+# Headless service for direct database pod access by API Gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: ltplabs-database
+  namespace: default
+  labels:
+    app: ltplabs-database
+    component: database
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service
+  selector:
+    app: ltplabs-database
+  ports:
+  - name: health
+    port: 8080
+    targetPort: 8080
+    protocol: TCP

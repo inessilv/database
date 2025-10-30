@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  catalog:
+    build:
+      context: ./services/catalog
+    container_name: ecatalog-catalog
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVICE_NAME=catalog
+      - VERSION=1.0.0
+      - AUTHENTICATION_URL=http://authentication:8080
+    networks:
+      - ecatalog-network
+    depends_on:
+      - authentication
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  authentication:
+    build:
+      context: ./services/authentication
+    container_name: ecatalog-authentication
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVICE_NAME=authentication
+      - VERSION=1.0.0
+    networks:
+      - ecatalog-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./services/frontend
+      args:
+        - VITE_API_URL=http://localhost:8000
+    container_name: ecatalog-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - ecatalog-network
+    depends_on:
+      catalog:
+        condition: service_healthy
+
+networks:
+  ecatalog-network:
+    driver: bridge
