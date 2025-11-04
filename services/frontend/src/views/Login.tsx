@@ -1,43 +1,48 @@
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
 
-/**
- * Vista de Login
- * 
- * Estado: Esqueleto básico
- * Próximos passos: Integrar com Keycloak OAuth 2.0 (RNF5, RNF21, RNF22)
- */
-function Login() {
-  const navigate = useNavigate();
+type Props = {
+    onLogin: (username: string, password: string) => boolean;
+};
 
-  const handleLogin = () => {
-    // TODO: Implementar autenticação real com Keycloak
-    navigate('/catalog');
-  };
+export default function Login({ onLogin }: Props) {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
 
-  return (
-    <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
-      <h1>E-Catalog LTPLabs</h1>
-      <h2>Login</h2>
-      <div style={{ marginTop: '2rem' }}>
-        <input 
-          type="email" 
-          placeholder="Email" 
-          style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-        />
-        <button 
-          onClick={handleLogin}
-          style={{ width: '100%', padding: '0.75rem', cursor: 'pointer' }}
-        >
-          Entrar
-        </button>
-      </div>
-    </div>
-  );
+    function submit(e: React.FormEvent) {
+        e.preventDefault();
+        const ok = onLogin(username, password);
+        if (!ok)
+            alert("Credenciais inválidas (usa admin/admin ou viewer/viewer).");
+    }
+
+    return (
+        <div className="auth-page">
+            <form className="auth-card auth-form" onSubmit={submit}>
+                <h1 className="auth-title">Login</h1>
+
+                <label className="label">Utilizador</label>
+                <input
+                    className="input"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="admin | viewer"
+                />
+
+                <label className="label">Palavra-passe</label>
+                <input
+                    className="input"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="admin | viewer"
+                />
+
+                <div className="auth-actions">
+                    <button className="button" type="submit">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
 }
-
-export default Login;

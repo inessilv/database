@@ -1,7 +1,6 @@
-echo "🗑️  E-Catalog - Script de Limpeza Completa"
+echo "🗑️  E-Catalog - Limpeza Segura (Empresa)"
 echo ""
 
-RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
@@ -11,49 +10,18 @@ NC='\033[0m'
 # ============================================================================
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🐳 Docker Compose - Parar e Remover Containers"
+echo "🐳 Docker Compose"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+# Voltar ao Docker local
+eval $(minikube docker-env -u) 2>/dev/null
+
 if [ -f "docker-compose.yml" ]; then
-    echo "📦 Parando containers..."
-    docker-compose down -v --remove-orphans
-    
-    echo -e "${GREEN}✅ Containers Docker Compose parados e removidos${NC}"
+    docker-compose down -v 2>/dev/null
+    echo -e "${GREEN}✅ Docker Compose parado${NC}"
 else
     echo -e "${YELLOW}⚠️  docker-compose.yml não encontrado${NC}"
 fi
-
-echo ""
-
-# ============================================================================
-# DOCKER IMAGES (LOCAL)
-# ============================================================================
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🖼️  Docker Images - Remover Imagens Locais"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-echo "🔍 Procurando imagens ecatalog..."
-IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep ecatalog)
-
-if [ ! -z "$IMAGES" ]; then
-    echo "📋 Imagens encontradas:"
-    echo "$IMAGES"
-    echo ""
-    echo "🗑️  Removendo imagens..."
-    docker rmi -f $IMAGES
-    echo -e "${GREEN}✅ Imagens locais removidas${NC}"
-else
-    echo -e "${YELLOW}⚠️  Nenhuma imagem ecatalog encontrada${NC}"
-fi
-
-# Remover também por nome específico
-docker rmi -f ecatalog/catalog:latest 2>/dev/null
-docker rmi -f ecatalog/authentication:latest 2>/dev/null
-docker rmi -f ecatalog/frontend:latest 2>/dev/null
-docker rmi -f projeto_ltp_labs-catalog 2>/dev/null
-docker rmi -f projeto_ltp_labs-authentication 2>/dev/null
-docker rmi -f projeto_ltp_labs-frontend 2>/dev/null
 
 echo ""
 
@@ -62,22 +30,13 @@ echo ""
 # ============================================================================
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "☸️  Kubernetes - Remover Deployments"
+echo "☸️  Kubernetes"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Verificar se Minikube está a correr
-if minikube status | grep -q "Running"; then
-    echo "🔍 Minikube está a correr..."
-    
-    # Verificar se namespace existe
+if minikube status | grep -q "Running" 2>/dev/null; then
     if kubectl get namespace ecatalog &> /dev/null; then
-        echo "📦 Namespace 'ecatalog' encontrado"
-        echo ""
-        
-        echo "🗑️  Removendo namespace (remove tudo dentro)..."
         kubectl delete namespace ecatalog
-        
-        echo -e "${GREEN}✅ Namespace Kubernetes removido${NC}"
+        echo -e "${GREEN}✅ Namespace 'ecatalog' removido${NC}"
     else
         echo -e "${YELLOW}⚠️  Namespace 'ecatalog' não existe${NC}"
     fi
@@ -88,29 +47,55 @@ fi
 echo ""
 
 # ============================================================================
-# DOCKER IMAGES (MINIKUBE)
+# DOCKER IMAGES (MINIKUBE) - SÓ ECATALOG!
 # ============================================================================
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🖼️  Docker Images - Remover do Minikube"
+echo "🖼️  Docker Images (Minikube) - Apenas E-Catalog"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if minikube status | grep -q "Running"; then
-    echo "🔄 Usando Docker do Minikube..."
+if minikube status | grep -q "Running" 2>/dev/null; then
+    # Entrar no Docker do Minikube
     eval $(minikube docker-env)
     
-    echo "🔍 Procurando imagens ecatalog no Minikube..."
-    MINIKUBE_IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep ecatalog)
+    echo "🔍 Procurando imagens ecatalog com tag..."
     
-    if [ ! -z "$MINIKUBE_IMAGES" ]; then
-        echo "📋 Imagens encontradas no Minikube:"
-        echo "$MINIKUBE_IMAGES"
-        echo ""
-        echo "🗑️  Removendo imagens do Minikube..."
-        docker rmi -f $MINIKUBE_IMAGES
-        echo -e "${GREEN}✅ Imagens do Minikube removidas${NC}"
+    # Remover APENAS imagens com repository "ecatalog/*"
+    CATALOG_IMG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^ecatalog/catalog:")
+    AUTH_IMG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^ecatalog/authentication:")
+    FRONT_IMG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^ecatalog/frontend:")
+    
+    REMOVED=0
+    
+    if [ ! -z "$CATALOG_IMG" ]; then
+        echo "🗑️  Removendo: $CATALOG_IMG"
+        docker rmi -f $CATALOG_IMG 2>/dev/null && ((REMOVED++))
+    fi
+    
+    if [ ! -z "$AUTH_IMG" ]; then
+        echo "🗑️  Removendo: $AUTH_IMG"
+        docker rmi -f $AUTH_IMG 2>/dev/null && ((REMOVED++))
+    fi
+    
+    if [ ! -z "$FRONT_IMG" ]; then
+        echo "🗑️  Removendo: $FRONT_IMG"
+        docker rmi -f $FRONT_IMG 2>/dev/null && ((REMOVED++))
+    fi
+    
+    if [ $REMOVED -gt 0 ]; then
+        echo -e "${GREEN}✅ $REMOVED imagem(ns) ecatalog removida(s)${NC}"
     else
-        echo -e "${YELLOW}⚠️  Nenhuma imagem ecatalog no Minikube${NC}"
+        echo -e "${YELLOW}⚠️  Nenhuma imagem ecatalog encontrada${NC}"
+    fi
+    
+    # IMPORTANTE: NÃO remover dangling images automaticamente!
+    DANGLING_COUNT=$(docker images -f "dangling=true" -q | wc -l)
+    if [ $DANGLING_COUNT -gt 0 ]; then
+        echo ""
+        echo -e "${YELLOW}ℹ️  Há $DANGLING_COUNT dangling images (<none>)${NC}"
+        echo "   Estas NÃO foram removidas (segurança)."
+        echo "   Se quiseres remover TODAS as dangling:"
+        echo "   docker image prune -f"
     fi
     
     # Voltar ao Docker local
@@ -142,25 +127,27 @@ echo -e "${GREEN}✅ Limpeza adicional completa${NC}"
 
 echo ""
 
-minikube delete
-minikube start
+# minikube delete
+# minikube start
 
 # ============================================================================
 # RESUMO
 # ============================================================================
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║                  ✅ LIMPEZA COMPLETA!                      ║"
+echo "║            ✅ LIMPEZA SEGURA COMPLETA!                     ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "🧹 O que foi limpo:"
-echo "   ✓ Containers Docker Compose parados"
-echo "   ✓ Imagens Docker locais removidas"
-echo "   ✓ Namespace Kubernetes removido"
-echo "   ✓ Imagens Minikube removidas"
-echo "   ✓ Recursos dangling limpos"
+echo "   ✓ Namespace Kubernetes 'ecatalog'"
+echo "   ✓ Imagens Docker 'ecatalog/*' (apenas com tag)"
+echo "   ✓ Containers Docker Compose"
 echo ""
-echo "Para fazer deploy novamente:"
-echo "   Docker Compose: docker-compose up --build"
-echo "   Kubernetes:     ./scripts/deploy-k8s.sh"
+echo "⚠️  O que NÃO foi tocado:"
+echo "   • Dangling images (<none>) - mantidas por segurança"
+echo "   • Outras imagens de outros projetos"
+echo "   • Cluster Minikube"
+echo ""
+echo "📝 Próximo passo:"
+echo "   ./scripts/redeploy.sh"
 echo ""

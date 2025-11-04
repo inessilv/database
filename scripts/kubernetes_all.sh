@@ -63,3 +63,6 @@ echo "🔐 Authentication: http://$MINIKUBE_IP:30080/docs"
 echo ""
 
 xdg-open http://$MINIKUBE_IP:30300
+
+# For windows users:
+# minikube service frontend -n ecatalog
