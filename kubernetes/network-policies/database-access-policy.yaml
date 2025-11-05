@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-access-policy
+  namespace: ecatalog
+spec:
+  # Esta policy aplica-se ao pod database
+  podSelector:
+    matchLabels:
+      app: database
+  
+  # Tipos de tráfego a controlar
+  policyTypes:
+  - Ingress
+  
+  # Regras de ingress (quem pode aceder)
+  ingress:
+  # Permitir tráfego apenas do pod catalog
+  - from:
+    - podSelector:
+        matchLabels:
+          app: catalog
+    ports:
+    - protocol: TCP
+      port: 8001
+
+---
+# NOTA: Esta Network Policy garante que:
+# ✅ Pod Catalog pode comunicar com Pod Database
+# ❌ Outros pods não podem aceder ao Database
+# ❌ Acesso externo ao Database é bloqueado
+#
+# Para funcionar, o cluster Kubernetes precisa de ter um CNI plugin
+# que suporte Network Policies (ex: Calico, Cilium, Weave Net)
+#
+# No Minikube, ativar com:
+# minikube start --cni=calico

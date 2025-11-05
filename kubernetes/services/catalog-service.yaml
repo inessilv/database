@@ -10,8 +10,9 @@ spec:
   selector:
     app: catalog
   ports:
-  - port: 8000
-    targetPort: 8000
-    nodePort: 30800
+  - port: 8000        # Porta interna do cluster
+    targetPort: 8000  # Porta do container
+    nodePort: 30800   # Porta externa (acesso via minikube IP)
     protocol: TCP
     name: http
+  sessionAffinity: None

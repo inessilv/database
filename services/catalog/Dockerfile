@@ -1,22 +1,29 @@
 FROM python:3.11-slim
 
+# Criar diretórios
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Copiar requirements e instalar dependências Python
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --no-cache-dir poetry
+# Copiar código da aplicação
+COPY app/ /app/app/
 
-COPY pyproject.toml poetry.lock* ./
+# Criar user não-root
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
-RUN poetry config virtualenvs.create false
+USER appuser
 
-RUN poetry install --no-interaction --no-ansi --no-root
-
-COPY ./app ./app
-
+# Expor porta da API
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Variáveis de ambiente (podem ser sobrescritas pelo Kubernetes)
+ENV CATALOG_PORT=8000
+ENV DATABASE_URL=http://database-internal:8001
+ENV AUTHENTICATION_URL=http://authentication:8080
+ENV PYTHONUNBUFFERED=1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Comando: Iniciar FastAPI
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

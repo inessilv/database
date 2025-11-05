@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: ecatalog
+  labels:
+    app: database
+    tier: data
+spec:
+  # IMPORTANTE: SQLite = 1 replica apenas (single writer)
+  replicas: 1
+  strategy:
+    type: Recreate  # Não pode haver 2 pods a escrever simultaneamente
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+        tier: data
+    spec:
+      # Anti-affinity: não colocar 2 pods no mesmo node (não aplicável com 1 replica, mas boa prática)
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - database
+            topologyKey: "kubernetes.io/hostname"
+      
+      containers:
+      - name: database
+        image: ecatalog/database:latest
+        imagePullPolicy: Never  # Minikube: usar imagens locais
+        
+        ports:
+        - name: http
+          containerPort: 8001
+          protocol: TCP
+        
+        # Environment variables do ConfigMap
+        env:
+        - name: SERVICE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: SERVICE_NAME
+        - name: VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: VERSION
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: ENVIRONMENT
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: DATABASE_PORT
+        - name: DB_PATH
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: DB_PATH
+        - name: SQLITE_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: SQLITE_TIMEOUT
+        - name: LOAD_SEED_DATA
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: LOAD_SEED_DATA
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: LOG_LEVEL
+        
+        # Environment variables do Secret
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: database-secret
+              key: ENCRYPTION_KEY
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: database-secret
+              key: JWT_SECRET
+        
+        # Volume mounts
+        volumeMounts:
+        - name: database-storage
+          mountPath: /data
+        - name: backup-storage
+          mountPath: /backups
+        
+        # Resources
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        
+        # Liveness probe - verifica se pod está vivo
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        # Readiness probe - verifica se pod está pronto para receber tráfego
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Startup probe - dá tempo para inicialização
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 30
+      
+      # Volumes
+      volumes:
+      - name: database-storage
+        persistentVolumeClaim:
+          claimName: database-pvc
+      - name: backup-storage
+        emptyDir: {}
+      
+      # Security context
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true

@@ -7,6 +7,7 @@ metadata:
     app: catalog
     tier: backend
 spec:
+  # Catalog é stateless, pode ter múltiplas replicas
   replicas: 2
   selector:
     matchLabels:
@@ -17,35 +18,55 @@ spec:
         app: catalog
         tier: backend
     spec:
-      # TODO Verificar o imagePullSecrets para caso seja preciso autenticar em algum repositorio para dar pull  
       containers:
       - name: catalog
         image: ecatalog/catalog:latest
-        imagePullPolicy: Never  # TODO Verificar se não temos de por como IfNotPresent dependendo de como ficam as tags das imagens! Ou never caso não seja o que estou a pensar
+        imagePullPolicy: Never  # Minikube: usar imagens locais
+        
         ports:
-        - containerPort: 8000
-          name: http
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        
+        # Environment variables do ConfigMap
         env:
         - name: SERVICE_NAME
-          value: "catalog"
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: SERVICE_NAME
         - name: VERSION
-          value: "1.0.0"
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: VERSION
         - name: ENVIRONMENT
-          value: "production"
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: ENVIRONMENT
+        - name: CATALOG_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: CATALOG_PORT
+        - name: DATABASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: DATABASE_URL
         - name: AUTHENTICATION_URL
-          value: "http://authentication:8080"  # ← DNS interno K8s!
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 10
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: AUTHENTICATION_URL
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config
+              key: LOG_LEVEL
+        
+        # Resources
         resources:
           requests:
             memory: "256Mi"
@@ -53,3 +74,23 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "1000m"
+        
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        # Readiness probe
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
