@@ -1,30 +1,12 @@
-"""
-Catalog Service Configuration
-"""
 from pydantic_settings import BaseSettings
-from typing import Optional
-
 
 class Settings(BaseSettings):
-    # Service info
     SERVICE_NAME: str = "catalog"
-    VERSION: str = "1.0.0"
-    ENVIRONMENT: str = "production"
-    CATALOG_PORT: int = 8000
-    
-    # URLs de serviços internos
-    DATABASE_URL: str = "http://database-internal:8001"
+    DATABASE_URL: str = "http://database:8001"
     AUTHENTICATION_URL: str = "http://authentication:8080"
-    
-    # Logging
-    LOG_LEVEL: str = "INFO"
-    
-    # Timeouts (em segundos)
-    HTTP_TIMEOUT: int = 30
+    HTTP_TIMEOUT: float = 30.0
     
     class Config:
         env_file = ".env"
-        case_sensitive = True
-
 
 settings = Settings()

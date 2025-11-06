@@ -15,11 +15,12 @@ echo "DB Path: $DB_PATH"
 echo "Load Seed Data: $LOAD_SEED_DATA"
 echo "========================================="
 
-# Function to initialize database
+# ----------------------------------------------------------------------------
+# Function to initialize database from scratch
+# ----------------------------------------------------------------------------
 init_database() {
     echo "Creating new database..."
-    
-    # Apply schema
+
     if [ -f "/scripts/schema.sql" ]; then
         echo "Applying schema..."
         sqlite3 "$DB_PATH" < /scripts/schema.sql
@@ -28,8 +29,7 @@ init_database() {
         echo "ERROR: schema.sql not found!"
         exit 1
     fi
-    
-    # Load seed data if requested
+
     if [ "$LOAD_SEED_DATA" = "true" ] && [ -f "/scripts/seed_data.sql" ]; then
         echo "Loading seed data..."
         sqlite3 "$DB_PATH" < /scripts/seed_data.sql
@@ -37,41 +37,57 @@ init_database() {
     fi
 }
 
-# Check if database exists
+# ----------------------------------------------------------------------------
+# Check existing database
+# ----------------------------------------------------------------------------
 if [ -f "$DB_PATH" ]; then
     echo "Database already exists at $DB_PATH"
-    
-    # Test if database is valid
-    if sqlite3 "$DB_PATH" "SELECT 1" > /dev/null 2>&1; then
+
+    if sqlite3 "$DB_PATH" "SELECT 1;" > /dev/null 2>&1; then
         echo "✓ Database is valid"
+
+        # Optional: reapply seed data if requested
+        if [ "$LOAD_SEED_DATA" = "true" ] && [ -f "/scripts/seed_data.sql" ]; then
+            echo "Reapplying seed data (LOAD_SEED_DATA=true)..."
+            sqlite3 "$DB_PATH" < /scripts/seed_data.sql
+            echo "✓ Seed data reloaded"
+        fi
     else
-        echo "Database is corrupted! Recreating..."
-        rm "$DB_PATH"
+        echo "⚠️ Database seems corrupted! Recreating..."
+        rm -f "$DB_PATH"
         init_database
     fi
 else
     init_database
 fi
 
-# Set proper permissions
+# ----------------------------------------------------------------------------
+# Optimize database
+# ----------------------------------------------------------------------------
 chmod 644 "$DB_PATH"
 
-# Enable WAL mode for better concurrency
 echo "Configuring database for optimal performance..."
-sqlite3 "$DB_PATH" "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA cache_size=-64000; PRAGMA temp_store=MEMORY;"
+sqlite3 "$DB_PATH" <<'SQL'
+PRAGMA journal_mode=WAL;
+PRAGMA synchronous=NORMAL;
+PRAGMA cache_size=-64000;
+PRAGMA temp_store=MEMORY;
+SQL
 
-# Display database statistics
+# ----------------------------------------------------------------------------
+# Display database stats
+# ----------------------------------------------------------------------------
 echo ""
 echo "Database Statistics:"
 echo "========================================="
-sqlite3 "$DB_PATH" << 'EOF'
+sqlite3 "$DB_PATH" <<'EOF'
 .mode line
 SELECT 
-    (SELECT COUNT(*) FROM admin) as total_admins,
-    (SELECT COUNT(*) FROM cliente) as total_clients,
-    (SELECT COUNT(*) FROM demo) as total_demos,
-    (SELECT COUNT(*) FROM pedido) as total_requests,
-    (SELECT COUNT(*) FROM log) as total_logs;
+    (SELECT COUNT(*) FROM admin)   AS total_admins,
+    (SELECT COUNT(*) FROM cliente) AS total_clients,
+    (SELECT COUNT(*) FROM demo)    AS total_demos,
+    (SELECT COUNT(*) FROM pedido)  AS total_requests,
+    (SELECT COUNT(*) FROM log)     AS total_logs;
 EOF
 echo "========================================="
 echo ""

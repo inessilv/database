@@ -1,22 +1,23 @@
 version: '3.8'
 
 services:
-  catalog:
+  database:
     build:
-      context: ./services/catalog
-    container_name: ecatalog-catalog
+      context: ./services/database
+      dockerfile: Dockerfile
+    image: ecatalog/database:latest
+    container_name: ecatalog-database
     ports:
-      - "8000:8000"
+      - "8001:8001"
+    volumes:
+      - ./data:/data
     environment:
-      - SERVICE_NAME=catalog
-      - VERSION=1.0.0
-      - AUTHENTICATION_URL=http://authentication:8080
+      - LOAD_SEED_DATA=true
+      - FORCE_RELOAD=true
     networks:
       - ecatalog-network
-    depends_on:
-      - authentication
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -38,19 +39,40 @@ services:
       timeout: 10s
       retries: 3
 
-  frontend:
+  catalog:
     build:
-      context: ./services/frontend
-      args:
-        - VITE_API_URL=http://localhost:8000
-    container_name: ecatalog-frontend
+      context: ./services/catalog
+    container_name: ecatalog-catalog
     ports:
-      - "3000:80"
+      - "8000:8000"
+    environment:
+      - SERVICE_NAME=catalog
+      - VERSION=1.0.0
+      - AUTHENTICATION_URL=http://authentication:8080
+      - DATABASE_URL=http://database:8001
     networks:
       - ecatalog-network
     depends_on:
-      catalog:
-        condition: service_healthy
+      - authentication
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # frontend:
+  #   build:
+  #     context: ./services/frontend
+  #     args:
+  #       - VITE_API_URL=http://localhost:8000
+  #   container_name: ecatalog-frontend
+  #   ports:
+  #     - "3000:80"
+  #   networks:
+  #     - ecatalog-network
+  #   depends_on:
+  #     catalog:
+  #       condition: service_healthy
 
 networks:
   ecatalog-network:
