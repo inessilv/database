@@ -11,7 +11,7 @@
 
 INSERT INTO admin (id, nome, email, password_hash, contacto) VALUES
     ('admin001', 'Administrador Sistema', 'admin@ltplabs.com', 
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
+     '$2y$14$RJ7J/nf/Z395D3uvy4cF8.vNEj6oUGC6Q.k3CEpTHrloAe.F9B002', 
      '+351 910 000 001'),
     ('admin002', 'João Silva', 'joao.silva@ltplabs.com', 
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 

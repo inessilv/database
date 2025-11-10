@@ -1,268 +1,363 @@
-import { useEffect, useMemo, useState } from "react";
+/**
+ * Notificacoes View
+ * 
+ * Gestão de pedidos de renovação/revogação
+ * Apenas admins podem aceder
+ */
 
-type Estado = "pendente" | "aceite" | "rejeitado";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { usePedidos } from "../hooks/usePedidos";
+import PedidoCard from "../components/PedidoCard";
+import ConfirmModal from "../components/ConfirmModal.tsx";
+import type { PedidoComCliente } from "../types/Pedido";
 
-type PedidoRenovacao = {
-    id: number;
-    nomeCliente: string;
-    demo: string;
-    estado: Estado;
-    ate: string;
-    criado: string;
-    atualizado: string;
-};
+type TabType = "pendentes" | "aprovados" | "rejeitados" | "todos";
 
-const LS_KEY = "pedidos_db_v1";
-const FALLBACK_KEYS = [
-    "pedidos_db",
-    "notifs_db_v1",
-    "renovacoes_db",
-    "notificacoes_db",
-];
-
-const seed: PedidoRenovacao[] = [
-    {
-        id: 1,
-        nomeCliente: "Ana Silva",
-        demo: "Demo 2",
-        estado: "pendente",
-        ate: "2025-11-30T00:00:00.000Z",
-        criado: "2025-10-27T15:21:23.000Z",
-        atualizado: "2025-10-27T15:21:23.000Z",
-    },
-    {
-        id: 2,
-        nomeCliente: "Carlos Santos",
-        demo: "Demo 1",
-        estado: "aceite",
-        ate: "2025-12-15T00:00:00.000Z",
-        criado: "2025-10-26T15:21:23.000Z",
-        atualizado: "2025-10-27T15:33:13.000Z",
-    },
-    {
-        id: 3,
-        nomeCliente: "Maria Rocha",
-        demo: "Demo Exemplo",
-        estado: "rejeitado",
-        ate: "2026-01-10T00:00:00.000Z",
-        criado: "2025-10-25T17:21:23.000Z",
-        atualizado: "2025-10-27T14:21:23.000Z",
-    },
-];
-
-function fmt(iso: string) {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString();
-}
-
-function isArrayOfPedidos(x: unknown): x is PedidoRenovacao[] {
-    return (
-        Array.isArray(x) &&
-        x.every(
-            (obj) =>
-                obj &&
-                typeof obj.id === "number" &&
-                typeof obj.nomeCliente === "string" &&
-                typeof obj.demo === "string" &&
-                (obj.estado === "pendente" ||
-                    obj.estado === "aceite" ||
-                    obj.estado === "rejeitado")
-        )
-    );
-}
+const ITEMS_PER_PAGE = 15;
 
 export default function Notificacoes() {
-    const [pedidos, setPedidos] = useState<PedidoRenovacao[]>([]);
-    const [filtro, setFiltro] = useState<"todos" | Estado>("todos");
+  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
+  const {
+    pedidos,
+    loading,
+    error,
+    countPendentes,
+    countAprovados,
+    countRejeitados,
+    refreshPedidos,
+    aprovarPedido,
+    rejeitarPedido,
+    getPedidosPorEstado,
+  } = usePedidos();
 
-    useEffect(() => {
-        let raw = localStorage.getItem(LS_KEY);
+  const [activeTab, setActiveTab] = useState<TabType>("pendentes");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [actionLoading, setActionLoading] = useState(false);
+  
+  // Modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    action: "aprovar" | "rejeitar" | null;
+    pedidoId: string | null;
+    pedido: PedidoComCliente | null;
+  }>({
+    isOpen: false,
+    action: null,
+    pedidoId: null,
+    pedido: null,
+  });
 
-        if (!raw) {
-            for (const k of FALLBACK_KEYS) {
-                const r = localStorage.getItem(k);
-                if (r) {
-                    raw = r;
-                    break;
-                }
-            }
-        }
+  /**
+   * Redirecionar se não for admin
+   */
+  if (!isAdmin) {
+    navigate("/demos");
+    return null;
+  }
 
-        if (raw) {
-            try {
-                const parsed = JSON.parse(raw);
-                if (isArrayOfPedidos(parsed) && parsed.length > 0) {
-                    setPedidos(parsed);
-                    localStorage.setItem(LS_KEY, JSON.stringify(parsed));
-                    return;
-                }
-            } catch {
-                // cai no seed
-            }
-        }
-
-        localStorage.setItem(LS_KEY, JSON.stringify(seed));
-        setPedidos(seed);
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem(LS_KEY, JSON.stringify(pedidos));
-    }, [pedidos]);
-
-    function setEstado(id: number, novo: Estado) {
-        setPedidos((curr) =>
-            curr.map((p) =>
-                p.id === id
-                    ? {
-                          ...p,
-                          estado: novo,
-                          atualizado: new Date().toISOString(),
-                      }
-                    : p
-            )
-        );
+  /**
+   * Filtrar pedidos por tab ativa
+   */
+  const pedidosFiltrados = useMemo(() => {
+    if (activeTab === "todos") {
+      return pedidos;
     }
+    return getPedidosPorEstado(activeTab.slice(0, -1) as any); // Remove 's' do final
+  }, [activeTab, pedidos, getPedidosPorEstado]);
 
-    const aceitar = (id: number) => setEstado(id, "aceite");
-    const rejeitar = (id: number) => setEstado(id, "rejeitado");
+  /**
+   * Paginação
+   */
+  const totalPages = Math.ceil(pedidosFiltrados.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const pedidosPaginados = pedidosFiltrados.slice(startIndex, endIndex);
 
-    const aceitarPendentes = () =>
-        setPedidos((curr) =>
-            curr.map((p) =>
-                p.estado === "pendente"
-                    ? {
-                          ...p,
-                          estado: "aceite",
-                          atualizado: new Date().toISOString(),
-                      }
-                    : p
-            )
-        );
+  /**
+   * Mudar de tab (reset paginação)
+   */
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
 
-    const rejeitarPendentes = () =>
-        setPedidos((curr) =>
-            curr.map((p) =>
-                p.estado === "pendente"
-                    ? {
-                          ...p,
-                          estado: "rejeitado",
-                          atualizado: new Date().toISOString(),
-                      }
-                    : p
-            )
-        );
+  /**
+   * Abrir modal de confirmação
+   */
+  const openConfirmModal = (
+    action: "aprovar" | "rejeitar",
+    pedidoId: string
+  ) => {
+    const pedido = pedidos.find((p) => p.id === pedidoId) || null;
+    setConfirmModal({
+      isOpen: true,
+      action,
+      pedidoId,
+      pedido,
+    });
+  };
 
-    const temPendentes = pedidos.some((p) => p.estado === "pendente");
+  /**
+   * Fechar modal
+   */
+  const closeConfirmModal = () => {
+    if (!actionLoading) {
+      setConfirmModal({
+        isOpen: false,
+        action: null,
+        pedidoId: null,
+        pedido: null,
+      });
+    }
+  };
 
-    const pedidosFiltrados = useMemo(() => {
-        if (filtro === "todos") return pedidos;
-        return pedidos.filter((p) => p.estado === filtro);
-    }, [pedidos, filtro]);
+  /**
+   * Confirmar ação
+   */
+  const handleConfirmAction = async () => {
+    if (!confirmModal.pedidoId || !confirmModal.action) return;
+
+    setActionLoading(true);
+
+    try {
+      if (confirmModal.action === "aprovar") {
+        await aprovarPedido(confirmModal.pedidoId);
+        alert("✅ Pedido aprovado com sucesso! Cliente renovado por +30 dias.");
+      } else {
+        await rejeitarPedido(confirmModal.pedidoId);
+        alert("❌ Pedido rejeitado.");
+      }
+
+      closeConfirmModal();
+    } catch (err: any) {
+      alert(`Erro: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /**
+   * Renderizar tabs
+   */
+  const renderTabs = () => {
+    const tabs: { key: TabType; label: string; count: number }[] = [
+      { key: "pendentes", label: "Pendentes", count: countPendentes },
+      { key: "aprovados", label: "Aprovados", count: countAprovados },
+      { key: "rejeitados", label: "Rejeitados", count: countRejeitados },
+      { key: "todos", label: "Todos", count: pedidos.length },
+    ];
 
     return (
-        <div className="page notifs">
-            <h1 className="page-title">Pedidos de Renovação</h1>
-
-            <div className="topbar">
-                <select
-                    value={filtro}
-                    onChange={(e) => setFiltro(e.target.value as any)}
-                >
-                    <option value="todos">Todos</option>
-                    <option value="pendente">Pendentes</option>
-                    <option value="aceite">Aceites</option>
-                    <option value="rejeitado">Rejeitados</option>
-                </select>
-
-                <div className="actions">
-                    <button
-                        className="button"
-                        onClick={aceitarPendentes}
-                        disabled={!temPendentes}
-                    >
-                        Aceitar pendentes
-                    </button>
-                    <button
-                        className="danger"
-                        onClick={rejeitarPendentes}
-                        disabled={!temPendentes}
-                    >
-                        Rejeitar pendentes
-                    </button>
-                </div>
-            </div>
-
-            {pedidosFiltrados.length === 0 ? (
-                <div className="empty-state">
-                    <p>
-                        Sem pedidos para mostrar com o filtro{" "}
-                        <strong>{filtro}</strong>.
-                    </p>
-                </div>
-            ) : (
-                <div className="list-stack">
-                    {pedidosFiltrados.map((p) => (
-                        <div key={p.id} className="card">
-                            <div className="list-item-title">
-                                {p.nomeCliente} pediu renovar{" "}
-                                <strong>{p.demo}</strong>
-                            </div>
-
-                            <div
-                                className="badge-container"
-                                style={{ marginTop: 8, marginBottom: 8 }}
-                            >
-                                {p.estado === "pendente" && (
-                                    <span className="badge badge--yellow">
-                                        Pendente
-                                    </span>
-                                )}
-                                {p.estado === "aceite" && (
-                                    <span className="badge badge--green">
-                                        Aceite
-                                    </span>
-                                )}
-                                {p.estado === "rejeitado" && (
-                                    <span className="badge badge--red">
-                                        Rejeitado
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="list-item-meta vertical">
-                                <div className="meta">
-                                    <strong>Até:</strong> {fmt(p.ate)}
-                                </div>
-                                <div className="meta">
-                                    <strong>Criado:</strong> {fmt(p.criado)}
-                                </div>
-                                <div className="meta">
-                                    <strong>Atualizado:</strong>{" "}
-                                    {fmt(p.atualizado)}
-                                </div>
-                            </div>
-
-                            {p.estado === "pendente" && (
-                                <div className="card-footer-actions">
-                                    <button
-                                        className="button"
-                                        onClick={() => aceitar(p.id)}
-                                    >
-                                        Aceitar
-                                    </button>
-                                    <button
-                                        className="danger"
-                                        onClick={() => rejeitar(p.id)}
-                                    >
-                                        Rejeitar
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
+      <div className="flex border-b border-gray-200 mb-6">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => handleTabChange(tab.key)}
+            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
+              activeTab === tab.key
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            {tab.label}
+            {tab.count > 0 && (
+              <span
+                className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                  activeTab === tab.key
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {tab.count}
+              </span>
             )}
-        </div>
+          </button>
+        ))}
+      </div>
     );
+  };
+
+  /**
+   * Renderizar paginação
+   */
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-8">
+        <button
+          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          ← Anterior
+        </button>
+
+        {pages.map((page) => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-3 py-1 rounded ${
+              currentPage === page
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 hover:bg-gray-300"
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Seguinte →
+        </button>
+      </div>
+    );
+  };
+
+  /**
+   * Loading skeleton
+   */
+  if (loading && pedidos.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Notificações</h1>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-gray-200 h-40 rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /**
+   * Error state
+   */
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Notificações</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-800 font-semibold mb-4">❌ {error}</p>
+          <button
+            onClick={refreshPedidos}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Notificações</h1>
+        <button
+          onClick={refreshPedidos}
+          disabled={loading}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+        >
+          {loading ? "A atualizar..." : "🔄 Atualizar"}
+        </button>
+      </div>
+
+      {/* Tabs */}
+      {renderTabs()}
+
+      {/* Lista de pedidos */}
+      {pedidosPaginados.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="text-6xl mb-4">
+            {activeTab === "pendentes" ? "🎉" : "📭"}
+          </div>
+          <h3 className="text-xl font-bold text-gray-700 mb-2">
+            {activeTab === "pendentes"
+              ? "Nenhum pedido pendente!"
+              : "Nenhum pedido encontrado"}
+          </h3>
+          <p className="text-gray-500">
+            {activeTab === "pendentes"
+              ? "Boa notícia - está tudo ok."
+              : "Tente outro filtro ou atualize a página."}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pedidosPaginados.map((pedido) => (
+              <PedidoCard
+                key={pedido.id}
+                pedido={pedido}
+                onAprovar={
+                  pedido.estado === "pendente" &&
+                  pedido.tipo_pedido === "renovação"
+                    ? () => openConfirmModal("aprovar", pedido.id)
+                    : undefined
+                }
+                onRejeitar={
+                  pedido.estado === "pendente"
+                    ? () => openConfirmModal("rejeitar", pedido.id)
+                    : undefined
+                }
+                loading={false}
+              />
+            ))}
+          </div>
+
+          {/* Paginação */}
+          {renderPagination()}
+
+          {/* Info */}
+          <div className="mt-6 text-center text-sm text-gray-500">
+            A mostrar {startIndex + 1}-{Math.min(endIndex, pedidosFiltrados.length)} de{" "}
+            {pedidosFiltrados.length} pedidos
+          </div>
+        </>
+      )}
+
+      {/* Modal de confirmação */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmModal.action === "aprovar"
+            ? "Aprovar pedido de renovação?"
+            : "Rejeitar pedido?"
+        }
+        message={
+          confirmModal.action === "aprovar"
+            ? `Tem a certeza que deseja aprovar o pedido de renovação de ${
+                confirmModal.pedido?.cliente_nome || "este cliente"
+              }? A data de expiração será estendida por +30 dias.`
+            : `Tem a certeza que deseja rejeitar o pedido de ${
+                confirmModal.pedido?.cliente_nome || "este cliente"
+              }?`
+        }
+        confirmText={
+          confirmModal.action === "aprovar" ? "Aprovar" : "Rejeitar"
+        }
+        confirmColor={confirmModal.action === "aprovar" ? "green" : "red"}
+        loading={actionLoading}
+      />
+    </div>
+  );
 }

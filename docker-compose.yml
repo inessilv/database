@@ -60,19 +60,19 @@ services:
       timeout: 10s
       retries: 3
 
-  # frontend:
-  #   build:
-  #     context: ./services/frontend
-  #     args:
-  #       - VITE_API_URL=http://localhost:8000
-  #   container_name: ecatalog-frontend
-  #   ports:
-  #     - "3000:80"
-  #   networks:
-  #     - ecatalog-network
-  #   depends_on:
-  #     catalog:
-  #       condition: service_healthy
+  frontend:
+    build:
+      context: ./services/frontend
+      args:
+        - VITE_API_URL=http://localhost:8000
+    container_name: ecatalog-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - ecatalog-network
+    depends_on:
+      catalog:
+        condition: service_healthy
 
 networks:
   ecatalog-network:

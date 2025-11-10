@@ -5,15 +5,6 @@
  * Uso: import { User, Demo, Cliente } from '@/types'
  */
 
-// Auth
- export type {
-  User,
-  LoginRequest,
-  TokenResponse,
-  TokenValidationRequest,
-  TokenValidationResponse,
-} from "./Auth";
-
 // Demo
 export type{
   Demo,
