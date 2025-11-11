@@ -1,14 +1,16 @@
 /**
- * usePedidos Hook
+ * usePedidos Hook (Adaptado)
  * 
  * Custom hook para gestão de pedidos (renovação/revogação)
- * Fornece estado, loading, erros e métodos para interagir com pedidos
+ * Versão adaptada para funcionar sem useAuth hook
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { pedidoService } from "../services/pedidoService";
-import type { Pedido, PedidoComCliente } from "../types/Pedido";
-import { useAuth } from "./useAuth";
+import type {PedidoComCliente } from "../types/Pedido";
+
+// Adaptar para o User type atual do App.tsx
+type User = { name: string; role: "admin" | "viewer" };
 
 interface UsePedidosReturn {
   // Estado
@@ -28,9 +30,17 @@ interface UsePedidosReturn {
   getPedidosPorEstado: (estado: "pendente" | "aprovado" | "rejeitado") => PedidoComCliente[];
 }
 
+/**
+ * Hook de gestão de pedidos
+ * Lê user de localStorage
+ */
 export function usePedidos(): UsePedidosReturn {
-  const { user } = useAuth();
-  
+  // Obter user de localStorage
+  const getUser = (): User | null => {
+    const raw = localStorage.getItem("app_user");
+    return raw ? (JSON.parse(raw) as User) : null;
+  };
+
   const [pedidos, setPedidos] = useState<PedidoComCliente[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +49,8 @@ export function usePedidos(): UsePedidosReturn {
    * Carregar todos os pedidos
    */
   const loadPedidos = useCallback(async () => {
+    const user = getUser();
+    
     if (!user || user.role !== "admin") {
       return; // Apenas admins podem ver pedidos
     }
@@ -47,7 +59,6 @@ export function usePedidos(): UsePedidosReturn {
     setError(null);
 
     try {
-      // Buscar apenas pedidos pendentes inicialmente
       const data = await pedidoService.getPending();
       setPedidos(data);
     } catch (err: any) {
@@ -56,37 +67,7 @@ export function usePedidos(): UsePedidosReturn {
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
-  /**
-   * Carregar todos os pedidos (incluindo histórico)
-   */
-  const loadAllPedidos = useCallback(async () => {
-    if (!user || user.role !== "admin") {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const all = await pedidoService.getAll();
-      
-      // Como getAll retorna Pedido[], precisamos fazer cast
-      // ou buscar informações do cliente separadamente
-      // Por simplicidade, vamos usar apenas getPending que já retorna PedidoComCliente
-      // e depois filtrar localmente para outros estados
-      
-      // Alternativa: buscar cada pedido individualmente (não ideal)
-      // Por agora, vamos carregar pending e manter histórico local
-      setPedidos(all as any); // Temporary cast
-    } catch (err: any) {
-      console.error("Erro ao carregar pedidos:", err);
-      setError(err.message || "Erro ao carregar pedidos");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  }, []);
 
   /**
    * Refresh manual dos pedidos
@@ -101,6 +82,8 @@ export function usePedidos(): UsePedidosReturn {
    */
   const aprovarPedido = useCallback(
     async (id: string, novaDataExpiracao?: string) => {
+      const user = getUser();
+      
       if (!user) {
         throw new Error("Utilizador não autenticado");
       }
@@ -113,7 +96,6 @@ export function usePedidos(): UsePedidosReturn {
         let dataExpiracao = novaDataExpiracao;
         
         if (!dataExpiracao) {
-          // Buscar pedido para obter data atual
           const pedido = pedidos.find((p) => p.id === id);
           
           if (pedido) {
@@ -122,36 +104,34 @@ export function usePedidos(): UsePedidosReturn {
             nova.setDate(nova.getDate() + 30); // +30 dias
             dataExpiracao = nova.toISOString().split("T")[0]; // YYYY-MM-DD
           } else {
-            // Fallback: +30 dias a partir de hoje
             const hoje = new Date();
             hoje.setDate(hoje.getDate() + 30);
             dataExpiracao = hoje.toISOString().split("T")[0];
           }
         }
 
-        // Aprovar pedido
-        await pedidoService.approve(id, user.id.toString(), dataExpiracao);
+        const adminId = user.name;
+        await pedidoService.approve(id, adminId, dataExpiracao);
 
         // Atualizar lista local
         setPedidos((prev) =>
           prev.map((p) =>
             p.id === id
-              ? { ...p, estado: "aprovado" as const, gerido_por: user.id.toString() }
+              ? { ...p, estado: "aprovado" as const, gerido_por: adminId }
               : p
           )
         );
 
-        // Refresh completo para garantir sincronização
         await refreshPedidos();
       } catch (err: any) {
         console.error("Erro ao aprovar pedido:", err);
         setError(err.message || "Erro ao aprovar pedido");
-        throw err; // Re-throw para componente tratar
+        throw err;
       } finally {
         setLoading(false);
       }
     },
-    [user, pedidos, refreshPedidos]
+    [pedidos, refreshPedidos]
   );
 
   /**
@@ -159,6 +139,8 @@ export function usePedidos(): UsePedidosReturn {
    */
   const rejeitarPedido = useCallback(
     async (id: string) => {
+      const user = getUser();
+      
       if (!user) {
         throw new Error("Utilizador não autenticado");
       }
@@ -167,18 +149,17 @@ export function usePedidos(): UsePedidosReturn {
       setError(null);
 
       try {
-        await pedidoService.reject(id, user.id.toString());
+        const adminId = user.name;
+        await pedidoService.reject(id, adminId);
 
-        // Atualizar lista local
         setPedidos((prev) =>
           prev.map((p) =>
             p.id === id
-              ? { ...p, estado: "rejeitado" as const, gerido_por: user.id.toString() }
+              ? { ...p, estado: "rejeitado" as const, gerido_por: adminId }
               : p
           )
         );
 
-        // Refresh
         await refreshPedidos();
       } catch (err: any) {
         console.error("Erro ao rejeitar pedido:", err);
@@ -188,7 +169,7 @@ export function usePedidos(): UsePedidosReturn {
         setLoading(false);
       }
     },
-    [user, refreshPedidos]
+    [refreshPedidos]
   );
 
   /**
@@ -212,10 +193,11 @@ export function usePedidos(): UsePedidosReturn {
    * Carregar pedidos ao montar
    */
   useEffect(() => {
+    const user = getUser();
     if (user && user.role === "admin") {
       loadPedidos();
     }
-  }, [user, loadPedidos]);
+  }, [loadPedidos]);
 
   return {
     pedidos,

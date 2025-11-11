@@ -1,25 +1,30 @@
 /**
- * Notificacoes View
+ * Notificacoes View (Adaptado)
  * 
  * Gestão de pedidos de renovação/revogação
  * Apenas admins podem aceder
+ * Versão adaptada sem useAuth hook
  */
 
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
 import { usePedidos } from "../hooks/usePedidos";
 import PedidoCard from "../components/PedidoCard";
-import ConfirmModal from "../components/ConfirmModal.tsx";
+import ConfirmModal from "../components/ConfirmModal";
 import type { PedidoComCliente } from "../types/Pedido";
 
+// User type do App.tsx
+type User = { name: string; role: "admin" | "viewer" };
 type TabType = "pendentes" | "aprovados" | "rejeitados" | "todos";
 
 const ITEMS_PER_PAGE = 15;
 
-export default function Notificacoes() {
+type Props = {
+  user: User;
+};
+
+export default function Notificacoes({ user }: Props) {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
   const {
     pedidos,
     loading,
@@ -53,7 +58,7 @@ export default function Notificacoes() {
   /**
    * Redirecionar se não for admin
    */
-  if (!isAdmin) {
+  if (user.role !== "admin") {
     navigate("/demos");
     return null;
   }
@@ -65,7 +70,8 @@ export default function Notificacoes() {
     if (activeTab === "todos") {
       return pedidos;
     }
-    return getPedidosPorEstado(activeTab.slice(0, -1) as any); // Remove 's' do final
+    const estado = activeTab.slice(0, -1) as "pendente" | "aprovado" | "rejeitado";
+    return getPedidosPorEstado(estado);
   }, [activeTab, pedidos, getPedidosPorEstado]);
 
   /**

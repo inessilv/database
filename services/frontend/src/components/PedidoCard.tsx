@@ -5,7 +5,6 @@
  * Inclui ações para aprovar/rejeitar (se pendente)
  */
 
-import React from "react";
 import type { PedidoComCliente } from "../types/Pedido";
 
 interface PedidoCardProps {

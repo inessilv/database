@@ -131,15 +131,15 @@ export default function App() {
                         )
                     }
                 />
-                <Route
-                    path="/notificacoes"
-                    element={
-                        logged && isAdmin ? (
-                            <Notificacoes />
-                        ) : (
-                            <Navigate to="/login" replace />
-                        )
-                    }
+               <Route
+                path="/notificacoes"
+                element={
+                    logged && isAdmin ? (
+                    <Notificacoes user={user!} />  // ✅ Com prop
+                    ) : (
+                    <Navigate to="/login" replace />
+                    )
+                }
                 />
                 <Route
                     path="/clientes"

@@ -7,20 +7,21 @@ metadata:
     app: database
     tier: data
 spec:
-  # IMPORTANTE: SQLite = 1 replica apenas (single writer)
   replicas: 1
   strategy:
-    type: Recreate  # Não pode haver 2 pods a escrever simultaneamente
+    type: Recreate
+  
   selector:
     matchLabels:
       app: database
+  
   template:
     metadata:
       labels:
         app: database
         tier: data
+    
     spec:
-      # Anti-affinity: não colocar 2 pods no mesmo node (não aplicável com 1 replica, mas boa prática)
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -32,6 +33,25 @@ spec:
                 - database
             topologyKey: "kubernetes.io/hostname"
       
+      # ⬇️ INIT CONTAINER - Corrige permissões
+      initContainers:
+      - name: fix-permissions
+        image: busybox:latest
+        command: 
+        - sh
+        - -c
+        - |
+          echo "Fixing /data permissions..."
+          chown -R 1000:1000 /data
+          chmod -R 755 /data
+          ls -la /data
+          echo "Permissions fixed!"
+        volumeMounts:
+        - name: database-storage
+          mountPath: /data
+        securityContext:
+          runAsUser: 0  # root - NECESSÁRIO para chown
+      
       containers:
       - name: database
         image: ecatalog/database:latest
@@ -42,7 +62,6 @@ spec:
           containerPort: 8001
           protocol: TCP
         
-        # Environment variables do ConfigMap
         env:
         - name: SERVICE_NAME
           valueFrom:
@@ -84,8 +103,9 @@ spec:
             configMapKeyRef:
               name: database-config
               key: LOG_LEVEL
+        - name: PYTHONUNBUFFERED
+          value: "1"
         
-        # Environment variables do Secret
         - name: ENCRYPTION_KEY
           valueFrom:
             secretKeyRef:
@@ -97,14 +117,12 @@ spec:
               name: database-secret
               key: JWT_SECRET
         
-        # Volume mounts
         volumeMounts:
         - name: database-storage
           mountPath: /data
         - name: backup-storage
           mountPath: /backups
         
-        # Resources
         resources:
           requests:
             memory: "256Mi"
@@ -113,7 +131,6 @@ spec:
             memory: "1Gi"
             cpu: "1000m"
         
-        # Liveness probe - verifica se pod está vivo
         livenessProbe:
           httpGet:
             path: /health
@@ -123,7 +140,6 @@ spec:
           timeoutSeconds: 10
           failureThreshold: 3
         
-        # Readiness probe - verifica se pod está pronto para receber tráfego
         readinessProbe:
           httpGet:
             path: /health
@@ -133,7 +149,6 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
         
-        # Startup probe - dá tempo para inicialização
         startupProbe:
           httpGet:
             path: /health
@@ -143,7 +158,6 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 30
       
-      # Volumes
       volumes:
       - name: database-storage
         persistentVolumeClaim:
@@ -151,8 +165,6 @@ spec:
       - name: backup-storage
         emptyDir: {}
       
-      # Security context
-      securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsNonRoot: true
+      # ⚠️ REMOVIDO: securityContext do pod
+      # Porque o initContainer precisa de root
+      # O container principal já corre como appuser (definido no Dockerfile)
