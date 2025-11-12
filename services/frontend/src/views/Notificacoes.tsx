@@ -1,9 +1,9 @@
 /**
- * Notificacoes View (Adaptado)
+ * Notificacoes View (Refatorada)
  * 
  * Gestão de pedidos de renovação/revogação
  * Apenas admins podem aceder
- * Versão adaptada sem useAuth hook
+ * Usa services + types + styles.css
  */
 
 import { useState, useMemo } from "react";
@@ -14,7 +14,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import type { PedidoComCliente } from "../types/Pedido";
 
 // User type do App.tsx
-type User = { name: string; role: "admin" | "viewer" };
+type User = { id: string; name: string; role: "admin" | "viewer" };
 type TabType = "pendentes" | "aprovados" | "rejeitados" | "todos";
 
 const ITEMS_PER_PAGE = 15;
@@ -157,25 +157,31 @@ export default function Notificacoes({ user }: Props) {
     ];
 
     return (
-      <div className="flex border-b border-gray-200 mb-6">
+      <div className="tabs-nav" style={{ marginBottom: "2rem" }}>
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`px-6 py-3 font-medium text-sm transition-colors border-b-2 ${
-              activeTab === tab.key
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
+            className={activeTab === tab.key ? "active" : ""}
+            style={{ 
+              position: "relative",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem"
+            }}
           >
             {tab.label}
             {tab.count > 0 && (
               <span
-                className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  activeTab === tab.key
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-600"
-                }`}
+                className="badge"
+                style={{
+                  backgroundColor: activeTab === tab.key ? "var(--brand)" : "var(--muted-bg)",
+                  color: activeTab === tab.key ? "white" : "var(--text)",
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  fontSize: "0.75rem",
+                  fontWeight: "600"
+                }}
               >
                 {tab.count}
               </span>
@@ -198,11 +204,12 @@ export default function Notificacoes({ user }: Props) {
     }
 
     return (
-      <div className="flex justify-center items-center gap-2 mt-8">
+      <div className="pagination" style={{ marginTop: "2rem", textAlign: "center" }}>
         <button
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
-          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-ghost"
+          style={{ marginRight: "0.5rem" }}
         >
           ← Anterior
         </button>
@@ -211,11 +218,11 @@ export default function Notificacoes({ user }: Props) {
           <button
             key={page}
             onClick={() => setCurrentPage(page)}
-            className={`px-3 py-1 rounded ${
-              currentPage === page
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 hover:bg-gray-300"
-            }`}
+            className={currentPage === page ? "btn-primary" : "btn-ghost"}
+            style={{ 
+              margin: "0 0.25rem",
+              minWidth: "2.5rem"
+            }}
           >
             {page}
           </button>
@@ -224,7 +231,8 @@ export default function Notificacoes({ user }: Props) {
         <button
           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-ghost"
+          style={{ marginLeft: "0.5rem" }}
         >
           Seguinte →
         </button>
@@ -237,13 +245,20 @@ export default function Notificacoes({ user }: Props) {
    */
   if (loading && pedidos.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Notificações</h1>
-        <div className="space-y-4">
+      <div className="page-container">
+        <h1 className="page-title">Notificações</h1>
+        <div className="loading-skeleton">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-gray-200 h-40 rounded-lg animate-pulse"
+              className="skeleton-item"
+              style={{ 
+                height: "10rem", 
+                backgroundColor: "var(--card-bg)",
+                borderRadius: "12px",
+                marginBottom: "1rem",
+                animation: "pulse 1.5s ease-in-out infinite"
+              }}
             />
           ))}
         </div>
@@ -256,13 +271,21 @@ export default function Notificacoes({ user }: Props) {
    */
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Notificações</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800 font-semibold mb-4">❌ {error}</p>
+      <div className="page-container">
+        <h1 className="page-title">Notificações</h1>
+        <div className="error-state" style={{
+          backgroundColor: "var(--error-bg, #fee)",
+          border: "1px solid var(--error-border, #fcc)",
+          borderRadius: "12px",
+          padding: "2rem",
+          textAlign: "center"
+        }}>
+          <p style={{ color: "var(--error-text, #c00)", fontWeight: "600", marginBottom: "1rem" }}>
+            ❌ {error}
+          </p>
           <button
             onClick={refreshPedidos}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+            className="btn-primary"
           >
             Tentar novamente
           </button>
@@ -272,17 +295,19 @@ export default function Notificacoes({ user }: Props) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-container notifs">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Notificações</h1>
-        <button
-          onClick={refreshPedidos}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-        >
-          {loading ? "A atualizar..." : "🔄 Atualizar"}
-        </button>
+      <div className="page-topbar">
+        <h1 className="page-title">Notificações</h1>
+        <div className="page-actions">
+          <button
+            onClick={refreshPedidos}
+            disabled={loading}
+            className="btn-primary"
+          >
+            {loading ? "A atualizar..." : "🔄 Atualizar"}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -290,16 +315,24 @@ export default function Notificacoes({ user }: Props) {
 
       {/* Lista de pedidos */}
       {pedidosPaginados.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4">
+        <div className="empty-state" style={{ 
+          textAlign: "center", 
+          padding: "4rem 2rem" 
+        }}>
+          <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>
             {activeTab === "pendentes" ? "🎉" : "📭"}
           </div>
-          <h3 className="text-xl font-bold text-gray-700 mb-2">
+          <h3 style={{ 
+            fontSize: "1.25rem", 
+            fontWeight: "700", 
+            marginBottom: "0.5rem",
+            color: "var(--text)"
+          }}>
             {activeTab === "pendentes"
               ? "Nenhum pedido pendente!"
               : "Nenhum pedido encontrado"}
           </h3>
-          <p className="text-gray-500">
+          <p style={{ color: "var(--muted)" }}>
             {activeTab === "pendentes"
               ? "Boa notícia - está tudo ok."
               : "Tente outro filtro ou atualize a página."}
@@ -307,7 +340,7 @@ export default function Notificacoes({ user }: Props) {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="list-stack">
             {pedidosPaginados.map((pedido) => (
               <PedidoCard
                 key={pedido.id}
@@ -332,7 +365,12 @@ export default function Notificacoes({ user }: Props) {
           {renderPagination()}
 
           {/* Info */}
-          <div className="mt-6 text-center text-sm text-gray-500">
+          <div style={{ 
+            marginTop: "1.5rem", 
+            textAlign: "center", 
+            fontSize: "0.875rem",
+            color: "var(--muted)"
+          }}>
             A mostrar {startIndex + 1}-{Math.min(endIndex, pedidosFiltrados.length)} de{" "}
             {pedidosFiltrados.length} pedidos
           </div>

@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addDemo, type Demo } from "../data/demos";
+// User type do App.tsx
+type User = { id: string; name: string; role: "admin" | "viewer" };
 
-export default function DemoPage() {
+type Props = {
+  user: User;
+};
+
+export default function DemoPage({}: Props) {
     const navigate = useNavigate();
     const [form, setForm] = useState<Omit<Demo, "id">>({
         nome: "",

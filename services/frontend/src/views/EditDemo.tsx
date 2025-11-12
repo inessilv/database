@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchDemoById, updateDemo, type Demo } from "../data/demos";
 
-export default function EditDemo() {
+// User type do App.tsx
+type User = { id: string; name: string; role: "admin" | "viewer" };
+
+type Props = {
+  user: User;
+};
+export default function EditDemo({}: Props) {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 

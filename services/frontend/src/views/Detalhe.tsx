@@ -3,7 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { fetchDemoById, removeDemo, type Demo } from "../data/demos";
 
 const PLACEHOLDER = "/placeholder-user.png";
+// User type do App.tsx
+type User = { id: string; name: string; role: "admin" | "viewer" };
 
+type Props = {
+  user: User;
+};
 function pickBestImage(d: any): string | undefined {
     const candidates = [
         d?.urlFotoComercial,
@@ -65,7 +70,7 @@ function ImgAvatar({
     );
 }
 
-export default function Detalhe() {
+export default function Detalhe({}: Props) {
     const { id } = useParams();
     const navigate = useNavigate();
     const [demo, setDemo] = useState<Demo | null>(null);

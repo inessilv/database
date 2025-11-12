@@ -1,16 +1,16 @@
 /**
- * Navbar Component (Adaptado)
+ * Navbar Component (Atualizado)
  * 
  * Navegação principal da aplicação
  * Inclui badge de pedidos pendentes para admins
- * Versão adaptada sem useAuth hook
+ * + Link para Analytics
  */
 
 import { Link, useLocation } from "react-router-dom";
 import { usePedidos } from "../hooks/usePedidos";
 
-// User type do App.tsx
-type User = { name: string; role: "admin" | "viewer" };
+// User type do App.tsx (com ID)
+type User = { id: string; name: string; role: "admin" | "viewer" };
 
 type Props = {
   user: User;
@@ -68,6 +68,9 @@ export default function Navbar({ user, onLogout, onToggleTheme }: Props) {
                       {countPendentes}
                     </span>
                   )}
+                </Link>
+                <Link to="/analytics" className={isActive("/analytics")}>
+                  Analytics
                 </Link>
               </>
             )}

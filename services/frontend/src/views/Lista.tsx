@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import type { User } from "../App";
 import { fetchDemos, removeDemo, type Demo } from "../data/demos";
 import { useNavigate } from "react-router-dom";
 
-type Props = { user: User };
+// User type do App.tsx (declarado localmente para evitar conflito de imports)
+type AppUser = { id: string; name: string; role: "admin" | "viewer" };
+
+type Props = { user: AppUser };
 
 function normalizeToUrl(raw?: string): string | null {
     if (!raw) return null;
@@ -66,12 +68,13 @@ export default function Lista({ user }: Props) {
                                     clickable ? "clickable" : ""
                                 }`}
                                 onClick={() => {
-                                    handleOpenForViewer(d);
+                                    if (clickable) handleOpenForViewer(d);
                                 }}
                                 role={clickable ? "button" : undefined}
                                 tabIndex={clickable ? 0 : undefined}
                                 onKeyDown={(e) => {
                                     if (
+                                        clickable &&
                                         (e.key === "Enter" || e.key === " ")
                                     ) {
                                         e.preventDefault();
@@ -124,43 +127,34 @@ export default function Lista({ user }: Props) {
                                             </div>
                                         </div>
                                     </div>
-
-                                    {isAdmin && (
-                                        <div
-                                            className="card-actions"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <button
-                                                className="button"
-                                                onClick={() =>
-                                                    navigate(`/demos/${d.id}`)
-                                                }
-                                            >
-                                                Ver detalhes
-                                            </button>
-                                            <button
-                                                className="danger"
-                                                onClick={() =>
-                                                    handleRemove(d.id)
-                                                }
-                                            >
-                                                Remover
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
+
+                                {isAdmin && (
+                                    <div className="demo-card-actions">
+                                        <button
+                                            className="btn-secondary"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/demos/${d.id}`);
+                                            }}
+                                        >
+                                            Ver Detalhes
+                                        </button>
+                                        <button
+                                            className="btn-danger"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleRemove(d.id);
+                                            }}
+                                        >
+                                            Remover
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </li>
                     );
                 })}
-
-                {demos.length === 0 && (
-                    <li className="empty">
-                        <div className="card">
-                            <p>Sem demos para apresentar.</p>
-                        </div>
-                    </li>
-                )}
             </ul>
         </div>
     );

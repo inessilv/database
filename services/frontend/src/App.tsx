@@ -9,9 +9,15 @@ import EditDemo from "./views/EditDemo";
 import DemoPage from "./views/DemoPage";
 import Notificacoes from "./views/Notificacoes";
 import Clientes from "./views/Clientes";
+import ClienteDetalhe from "./views/ClienteDetalhe.tsx";
+import Analytics from "./views/Analytics";
 
 export type Role = "admin" | "viewer";
-export type User = { name: string; role: Role };
+export type User = { 
+  id: string;      // ⬅️ ADICIONADO
+  name: string; 
+  role: Role 
+};
 
 export default function App() {
     // tema
@@ -34,22 +40,33 @@ export default function App() {
     const logged = !!user;
     const isAdmin = user?.role === "admin";
 
-    // login “local” (admin/admin, viewer/viewer)
+    // login "local" (admin/admin, viewer/viewer)
     const handleLogin = (username: string, password: string) => {
         const u = username.trim().toLowerCase();
         const p = password.trim();
+        
         if (u === "admin" && p === "admin") {
-            const me: User = { name: "admin", role: "admin" };
+            const me: User = { 
+                id: "admin-mock-id",  // ⬅️ ID MOCK
+                name: "admin", 
+                role: "admin" 
+            };
             setUser(me);
             localStorage.setItem("app_user", JSON.stringify(me));
             return true;
         }
+        
         if (u === "viewer" && p === "viewer") {
-            const me: User = { name: "viewer", role: "viewer" };
+            const me: User = { 
+                id: "viewer-mock-id",  // ⬅️ ID MOCK
+                name: "viewer", 
+                role: "viewer" 
+            };
             setUser(me);
             localStorage.setItem("app_user", JSON.stringify(me));
             return true;
         }
+        
         return false;
     };
 
@@ -69,6 +86,7 @@ export default function App() {
             )}
 
             <Routes>
+                {/* Login */}
                 <Route
                     path="/login"
                     element={
@@ -80,6 +98,7 @@ export default function App() {
                     }
                 />
 
+                {/* Root */}
                 <Route
                     path="/"
                     element={
@@ -90,6 +109,8 @@ export default function App() {
                         )
                     }
                 />
+
+                {/* Demos - Lista (todos podem ver) */}
                 <Route
                     path="/demos"
                     element={
@@ -101,57 +122,91 @@ export default function App() {
                     }
                 />
 
+                {/* Demos - Criar (só admin) */}
                 <Route
                     path="/demos/new"
                     element={
                         logged && isAdmin ? (
-                            <DemoPage />
-                        ) : (
-                            <Navigate to="/login" replace />
-                        )
-                    }
-                />
-                <Route
-                    path="/demos/:id"
-                    element={
-                        logged && isAdmin ? (
-                            <Detalhe />
-                        ) : (
-                            <Navigate to="/login" replace />
-                        )
-                    }
-                />
-                <Route
-                    path="/demos/:id/edit"
-                    element={
-                        logged && isAdmin ? (
-                            <EditDemo />
-                        ) : (
-                            <Navigate to="/login" replace />
-                        )
-                    }
-                />
-               <Route
-                path="/notificacoes"
-                element={
-                    logged && isAdmin ? (
-                    <Notificacoes user={user!} />  // ✅ Com prop
-                    ) : (
-                    <Navigate to="/login" replace />
-                    )
-                }
-                />
-                <Route
-                    path="/clientes"
-                    element={
-                        logged && isAdmin ? (
-                            <Clientes />
+                            <DemoPage user={user!} />
                         ) : (
                             <Navigate to="/login" replace />
                         )
                     }
                 />
 
+                {/* Demos - Ver Detalhes (só admin) */}
+                <Route
+                    path="/demos/:id"
+                    element={
+                        logged && isAdmin ? (
+                            <Detalhe user={user!} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                {/* Demos - Editar (só admin) */}
+                <Route
+                    path="/demos/:id/edit"
+                    element={
+                        logged && isAdmin ? (
+                            <EditDemo user={user!} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                {/* Notificações (só admin) */}
+                <Route
+                    path="/notificacoes"
+                    element={
+                        logged && isAdmin ? (
+                            <Notificacoes user={user!} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                {/* Clientes - Lista (só admin) */}
+                <Route
+                    path="/clientes"
+                    element={
+                        logged && isAdmin ? (
+                            <Clientes user={user!} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                {/* Clientes - Ver Detalhes (só admin) */}
+                <Route
+                    path="/clientes/:id"
+                    element={
+                        logged && isAdmin ? (
+                            <ClienteDetalhe user={user!} />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                {/* Analytics (só admin) */}
+                <Route
+                    path="/analytics"
+                    element={
+                        logged && isAdmin ? (
+                            <Analytics />
+                        ) : (
+                            <Navigate to="/login" replace />
+                        )
+                    }
+                />
+
+                {/* 404 */}
                 <Route
                     path="*"
                     element={

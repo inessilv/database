@@ -98,7 +98,7 @@ kubectl apply -f kubernetes/deployments/database-deployment.yaml
 kubectl apply -f kubernetes/services/database-internal-service.yaml
 
 echo -e "${BLUE}⏳ Aguardando Database pod ficar ready...${NC}"
-kubectl wait --for=condition=ready pod -l app=database -n ecatalog --timeout=120s
+kubectl wait --for=condition=ready pod -l app=database -n ecatalog --timeout=180s
 echo -e "${GREEN}✓ Database está ready!${NC}"
 echo ""
 

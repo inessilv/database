@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-// import { useNavigate } from "react-router-dom";
+
+type AppUser = { id: string; name: string; role: "admin" | "viewer" };
+
+type Props = {
+  user: AppUser;
+};
 
 type Cliente = {
     id: number;
@@ -33,8 +38,10 @@ function nextId(): number {
     return nxt;
 }
 
-export default function Clientes() {
-    // const navigate = useNavigate();
+export default function Clientes({ user }: Props) {
+    // TODO: Usar user.id quando refatorarmos para API real (Fase 2)
+    console.log("User:", user.name); // Evita warning de "não usado"
+    
     const [clientes, setClientes] = useState<Cliente[]>([]);
     const [q, setQ] = useState("");
     const [showAdd, setShowAdd] = useState(false);
@@ -209,16 +216,16 @@ export default function Clientes() {
                                 </div>
                             </div>
 
-                            <div className="card-footer-actions">
+                            <div className="form-actions">
                                 <button
                                     type="button"
-                                    className="btn-cancel"
+                                    className="btn-secondary"
                                     onClick={fecharAdd}
                                 >
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn-primary">
-                                    Guardar
+                                    Adicionar
                                 </button>
                             </div>
                         </form>
