@@ -26,6 +26,16 @@ class PedidoService:
         pedidos = await db_client.get_pending_pedidos()
         return [PedidoResponse(**p) for p in pedidos]
     
+    async def get_approved_pedidos(self) -> List[PedidoResponse]:
+        """Obter pedidos aprovados"""
+        pedidos = await db_client.get_approved_pedidos()
+        return [PedidoResponse(**p) for p in pedidos]
+    
+    async def get_rejected_pedidos(self) -> List[PedidoResponse]:
+        """Obter pedidos rejeitados"""
+        pedidos = await db_client.get_rejected_pedidos()
+        return [PedidoResponse(**p) for p in pedidos]
+    
     async def get_pedido(self, pedido_id: str) -> PedidoResponse:
         """Obter pedido por ID"""
         pedido = await db_client.get_pedido(pedido_id)
@@ -46,6 +56,7 @@ class PedidoService:
         Aprovar pedido
         TRANSACTION: Atualiza pedido + estende acesso do cliente
         """
+        
         updated = await db_client.approve_pedido(
             pedido_id,
             approve.admin_id,

@@ -10,7 +10,8 @@ import { pedidoService } from "../services/pedidoService";
 import type {PedidoComCliente } from "../types/Pedido";
 
 // Adaptar para o User type atual do App.tsx
-type User = { name: string; role: "admin" | "viewer" };
+
+type User = { id: string, name: string; role: "admin" | "viewer" };
 
 interface UsePedidosReturn {
   // Estado
@@ -110,7 +111,7 @@ export function usePedidos(): UsePedidosReturn {
           }
         }
 
-        const adminId = user.name;
+        const adminId = user.id;
         await pedidoService.approve(id, adminId, dataExpiracao);
 
         // Atualizar lista local
@@ -149,7 +150,7 @@ export function usePedidos(): UsePedidosReturn {
       setError(null);
 
       try {
-        const adminId = user.name;
+        const adminId = user.id;
         await pedidoService.reject(id, adminId);
 
         setPedidos((prev) =>

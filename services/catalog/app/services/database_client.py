@@ -152,9 +152,17 @@ class DatabaseClient:
         """GET /db/pedidos/all"""
         return await self._request("GET", "/db/pedidos/all")
     
+    async def get_approved_pedidos(self) -> List[Dict[str, Any]]:
+        """GET /db/pedidos/approved"""
+        return await self._request("GET", "/db/pedidos/approved")
+    
     async def get_pending_pedidos(self) -> List[Dict[str, Any]]:
         """GET /db/pedidos/pending"""
         return await self._request("GET", "/db/pedidos/pending")
+    
+    async def get_rejected_pedidos(self) -> List[Dict[str, Any]]:
+        """GET /db/pedidos/rejected"""
+        return await self._request("GET", "/db/pedidos/rejected")
     
     async def get_pedido(self, pedido_id: str) -> Dict[str, Any]:
         """GET /db/pedidos/{id}"""
@@ -166,15 +174,15 @@ class DatabaseClient:
     
     async def approve_pedido(self, pedido_id: str, admin_id: str, 
                             nova_data_expiracao: Optional[str] = None) -> Dict[str, Any]:
-        """PUT /db/pedidos/{id}/approve - TRANSACTION"""
+        """POST /db/pedidos/{id}/approve - TRANSACTION"""
         payload = {"admin_id": admin_id}
         if nova_data_expiracao:
             payload["nova_data_expiracao"] = nova_data_expiracao
-        return await self._request("PUT", f"/db/pedidos/{pedido_id}/approve", json=payload)
+        return await self._request("POST", f"/db/pedidos/{pedido_id}/approve", json=payload)
     
     async def reject_pedido(self, pedido_id: str, admin_id: str) -> Dict[str, Any]:
         """PUT /db/pedidos/{id}/reject - TRANSACTION"""
-        return await self._request("PUT", f"/db/pedidos/{pedido_id}/reject", 
+        return await self._request("POST", f"/db/pedidos/{pedido_id}/reject", 
                                   json={"admin_id": admin_id})
     
     async def delete_pedido(self, pedido_id: str) -> None:

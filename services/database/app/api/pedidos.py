@@ -57,12 +57,32 @@ def get_pending_pedidos():
     """
     return db.execute_query(query)
 
+@router.get("/approved", response_model=List[PedidoResponse])
+def get_approved_pedidos():
+    """Listar pedidos aprovados"""
+    query = """
+        SELECT * FROM pedido 
+        WHERE estado = 'aprovado' 
+        ORDER BY criado_em ASC
+    """
+    return db.execute_query(query)
+
+@router.get("/rejected", response_model=List[PedidoResponse])
+def get_rejected_pedidos():
+    """Listar pedidos rejeitados"""
+    query = """
+        SELECT * FROM pedido 
+        WHERE estado = 'rejeitado' 
+        ORDER BY criado_em ASC
+    """
+    return db.execute_query(query)
+
 
 @router.get("/{pedido_id}", response_model=PedidoResponse)
 def get_pedido(pedido_id: str):
     """Obter pedido específico por ID"""
     query = "SELECT * FROM pedido WHERE id = ?"
-    pedidos = db.execute_query(query, (pedido_id,))
+    pedidos = db.execute_query(query, (pedido_id.strip(),))
     
     if not pedidos:
         raise HTTPException(
@@ -73,7 +93,7 @@ def get_pedido(pedido_id: str):
     return pedidos[0]
 
 
-@router.post("/", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
 def create_pedido(pedido: PedidoCreate):
     """Criar novo pedido"""
     import secrets
@@ -95,7 +115,7 @@ def create_pedido(pedido: PedidoCreate):
     return get_pedido(pedido_id)
 
 
-@router.put("/{pedido_id}/approve")
+@router.post("/{pedido_id}/approve")
 def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
     """
     Aprovar pedido - TRANSACTION
@@ -151,12 +171,10 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
                  f"Pedido de {pedido['tipo_pedido']} aprovado")
             )
         # TRANSACTION END (auto-commit)
+        query = "SELECT * FROM pedido WHERE id = ?"
+        pedidos = db.execute_query(query, (pedido_id.strip(),))
+        return pedidos[0]
         
-        return {
-            "message": "Pedido aprovado com sucesso",
-            "pedido_id": pedido_id,
-            "tipo_pedido": pedido['tipo_pedido']
-        }
     
     except HTTPException:
         raise
@@ -167,7 +185,7 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
         )
 
 
-@router.put("/{pedido_id}/reject")
+@router.post("/{pedido_id}/reject")
 def reject_pedido(pedido_id: str, request: ApproveRejectRequest):
     """
     Rejeitar pedido - TRANSACTION
@@ -175,7 +193,9 @@ def reject_pedido(pedido_id: str, request: ApproveRejectRequest):
     2. Cria log de rejeição
     """
     # Buscar pedido
-    pedidos = db.execute_query("SELECT * FROM pedido WHERE id = ?", (pedido_id,))
+    query = "SELECT * FROM pedido WHERE id = ?"
+    pedidos = db.execute_query(query, (pedido_id.strip(),))
+    
     if not pedidos:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -190,38 +210,49 @@ def reject_pedido(pedido_id: str, request: ApproveRejectRequest):
             detail=f"Pedido já foi {pedido['estado']}"
         )
     
+    admin = db.execute_query("SELECT id FROM admin WHERE id = ?", (request.admin_id,))
+    if not admin:
+        print(f"[WARN] Administrador {request.admin_id} não encontrado")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Administrador {request.admin_id} não encontrado"
+        )
     try:
         # TRANSACTION START
         with db.get_cursor() as cursor:
             # 1. Atualizar pedido
+        
             cursor.execute(
                 "UPDATE pedido SET estado = 'rejeitado', gerido_por = ? WHERE id = ?",
                 (request.admin_id, pedido_id)
             )
             
-            # 2. Criar log
-            import secrets
-            log_id = secrets.token_hex(16)
-            cursor.execute(
-                """INSERT INTO log (id, cliente_id, tipo, mensagem)
-                   VALUES (?, ?, 'acesso_revogado', ?)""",
-                (log_id, pedido['cliente_id'], 
-                 f"Pedido de {pedido['tipo_pedido']} rejeitado")
-            )
+
+            # # 2. Criar log
+            # import secrets
+            # log_id = secrets.token_hex(16)
+            # cursor.execute(
+            #     """INSERT INTO log (id, cliente_id, tipo, mensagem)
+            #        VALUES (?, ?, 'acesso_revogado', ?)""",
+            #     (log_id, pedido['cliente_id'], 
+            #      f"Pedido de {pedido['tipo_pedido']} rejeitado")
+            # )
         # TRANSACTION END
-        
-        return {
-            "message": "Pedido rejeitado",
-            "pedido_id": pedido_id,
-            "tipo_pedido": pedido['tipo_pedido']
-        }
+        query = "SELECT * FROM pedido WHERE id = ?"
+        pedidos = db.execute_query(query, (pedido_id.strip(),))
+        return pedidos[0]
+        # return {
+        #     "message": "Pedido rejeitado",
+        #     "pedido_id": pedido_id,
+        #     "tipo_pedido": pedido['tipo_pedido']
+        # }
     
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao rejeitar pedido: {str(e)}"
-        )
-
+         import traceback; traceback.print_exc()
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"Erro ao rejeitar pedido no DB: {str(e)}"
+    )
 
 @router.delete("/{pedido_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pedido(pedido_id: str):

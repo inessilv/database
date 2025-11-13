@@ -46,6 +46,31 @@ async def get_pending_pedidos():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao obter pedidos pendentes: {str(e)}"
         )
+@router.get("/approved", response_model=List[PedidoResponse])
+async def get_approved_pedidos():
+    """
+    Listar pedidos pendentes
+    """
+    try:
+        return await pedido_service.get_approved_pedidos()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter pedidos aprovados: {str(e)}"
+        )
+
+@router.get("/rejected", response_model=List[PedidoResponse])
+async def get_rejected_pedidos():
+    """
+    Listar pedidos pendentes
+    """
+    try:
+        return await pedido_service.get_rejected_pedidos()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter pedidos rejeitados: {str(e)}"
+        )
 
 
 @router.get("/{pedido_id}", response_model=PedidoResponse)
@@ -67,7 +92,7 @@ async def get_pedido(pedido_id: str):
         )
 
 
-@router.post("/", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
 async def create_pedido(pedido: PedidoCreate):
     """
     Criar novo pedido

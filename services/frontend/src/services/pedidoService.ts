@@ -31,6 +31,8 @@ class PedidoService {
     return api.get<PedidoComCliente[]>("/api/pedidos/pending");
   }
 
+
+
   /**
    * Obter pedido por ID
    * GET /api/pedidos/{id}
@@ -44,7 +46,7 @@ class PedidoService {
    * POST /api/pedidos/
    */
   async create(pedido: PedidoCreate): Promise<Pedido> {
-    return api.post<Pedido>("/api/pedidos/", pedido);
+    return api.post<Pedido>("/api/pedidos/create", pedido);
   }
 
   /**
@@ -63,7 +65,7 @@ class PedidoService {
       nova_data_expiracao: novaDataExpiracao,
     };
 
-    return api.put<Pedido>(`/api/pedidos/${id}/approve`, request);
+    return api.post<Pedido>(`/api/pedidos/${id}/approve`, request);
   }
 
   /**
@@ -75,7 +77,7 @@ class PedidoService {
       admin_id: adminId,
     };
 
-    return api.put<Pedido>(`/api/pedidos/${id}/reject`, request);
+    return api.post<Pedido>(`/api/pedidos/${id}/reject`, request);
   }
 
   /**

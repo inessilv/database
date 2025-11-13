@@ -47,8 +47,8 @@ export default function App() {
         
         if (u === "admin" && p === "admin") {
             const me: User = { 
-                id: "admin-mock-id",  // ⬅️ ID MOCK
-                name: "admin", 
+                id: "admin001",  // ⬅️ ID MOCK
+                name: "admin001", 
                 role: "admin" 
             };
             setUser(me);
