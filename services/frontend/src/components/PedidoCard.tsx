@@ -66,32 +66,55 @@ export default function PedidoCard({
     );
   };
 
-  /**
-   * Formatar data
-   */
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("pt-PT", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+ /**
+ * Formatar data
+ */
+const formatDate = (dateString: string | null | undefined) => {
+  // Validar se a data existe e não é vazia
+  if (!dateString) {
+    console.log("A data é "+dateString);
+    return "Data não definida";
+  }
 
-  /**
-   * Calcular dias até expiração
-   */
-  const getDiasRestantes = () => {
-    const hoje = new Date();
-    const expiracao = new Date(pedido.data_expiracao_atual);
-    const diff = expiracao.getTime() - hoje.getTime();
-    const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return dias;
-  };
+  const date = new Date(dateString);
+  
+  // Verificar se a data é válida
+  if (isNaN(date.getTime())) {
+    return "Data inválida";
+  }
 
-  const diasRestantes = getDiasRestantes();
-  const expirado = diasRestantes < 0;
-  const expirandoBreve = diasRestantes > 0 && diasRestantes <= 7;
+  return date.toLocaleDateString("pt-PT", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+/**
+ * Calcular dias até expiração
+ */
+const getDiasRestantes = () => {
+  // Validar se a data de expiração existe
+  if (!pedido.data_expiracao_atual) {
+    return null;
+  }
+
+  const hoje = new Date();
+  const expiracao = new Date(pedido.data_expiracao_atual);
+  
+  // Verificar se a data de expiração é válida
+  if (isNaN(expiracao.getTime())) {
+    return null;
+  }
+
+  const diff = expiracao.getTime() - hoje.getTime();
+  const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return dias;
+};
+
+const diasRestantes = getDiasRestantes();
+const expirado = diasRestantes !== null && diasRestantes < 0;
+const expirandoBreve = diasRestantes !== null && diasRestantes > 0 && diasRestantes <= 7;
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6">
@@ -102,6 +125,7 @@ export default function PedidoCard({
           {getTipoBadge()}
         </div>
         <span className="text-xs text-gray-500">
+          <p>Criado em:</p>
           {formatDate(pedido.criado_em)}
         </span>
       </div>

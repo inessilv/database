@@ -30,6 +30,11 @@ class PedidoResponse(PedidoBase):
     criado_em: str
     gerido_por: Optional[str] = None
 
+class PedidoResponseCliente(PedidoResponse):
+    cliente_nome: str
+    cliente_email:str
+    data_expiracao_atual: str
+
 
 class ApproveRejectRequest(BaseModel):
     admin_id: str  # Quem está a aprovar/rejeitar
@@ -40,14 +45,35 @@ class ApproveRejectRequest(BaseModel):
 # ENDPOINTS
 # ============================================================================
 
-@router.get("/all", response_model=List[PedidoResponse])
+@router.get("/all", response_model=List[PedidoResponseCliente])
 def get_all_pedidos():
     """Listar todos os pedidos"""
     query = "SELECT * FROM pedido ORDER BY criado_em DESC"
-    return db.execute_query(query)
+    pedidos = db.execute_query(query)
+    #Inicio de Teste ---------------
+    results = []
+    for pedido in pedidos:
+        
+        cliente = db.execute_query(
+            "SELECT nome, email, data_expiracao FROM cliente WHERE id = ?",
+            (pedido["cliente_id"],)
+        )
+        cliente = cliente[0] if cliente else None
+
+        # Construir o resultado final
+        result = {
+            **pedido,
+            "cliente_nome": cliente["nome"],
+            "cliente_email": cliente["email"],
+            "data_expiracao_atual": cliente["data_expiracao"],
+        }
+        results.append(result)
+
+    #Fim de Teste -------------------
+    return results
 
 
-@router.get("/pending", response_model=List[PedidoResponse])
+@router.get("/pending", response_model=List[PedidoResponseCliente])
 def get_pending_pedidos():
     """Listar pedidos pendentes"""
     query = """
@@ -55,9 +81,30 @@ def get_pending_pedidos():
         WHERE estado = 'pendente' 
         ORDER BY criado_em ASC
     """
-    return db.execute_query(query)
+    pedidos = db.execute_query(query)
+    #Inicio de Teste ---------------
+    results = []
+    for pedido in pedidos:
+        
+        cliente = db.execute_query(
+            "SELECT nome, email, data_expiracao FROM cliente WHERE id = ?",
+            (pedido["cliente_id"],)
+        )
+        cliente = cliente[0] if cliente else None
 
-@router.get("/approved", response_model=List[PedidoResponse])
+        # Construir o resultado final
+        result = {
+            **pedido,
+            "cliente_nome": cliente["nome"],
+            "cliente_email": cliente["email"],
+            "data_expiracao_atual": cliente["data_expiracao"],
+        }
+        results.append(result)
+
+    #Fim de Teste -------------------
+    return results
+
+@router.get("/approved", response_model=List[PedidoResponseCliente])
 def get_approved_pedidos():
     """Listar pedidos aprovados"""
     query = """
@@ -65,9 +112,30 @@ def get_approved_pedidos():
         WHERE estado = 'aprovado' 
         ORDER BY criado_em ASC
     """
-    return db.execute_query(query)
+    pedidos = db.execute_query(query)
+    #Inicio de Teste ---------------
+    results = []
+    for pedido in pedidos:
+        
+        cliente = db.execute_query(
+            "SELECT nome, email, data_expiracao FROM cliente WHERE id = ?",
+            (pedido["cliente_id"],)
+        )
+        cliente = cliente[0] if cliente else None
 
-@router.get("/rejected", response_model=List[PedidoResponse])
+        # Construir o resultado final
+        result = {
+            **pedido,
+            "cliente_nome": cliente["nome"],
+            "cliente_email": cliente["email"],
+            "data_expiracao_atual": cliente["data_expiracao"],
+        }
+        results.append(result)
+
+    #Fim de Teste -------------------
+    return results
+
+@router.get("/rejected", response_model=List[PedidoResponseCliente])
 def get_rejected_pedidos():
     """Listar pedidos rejeitados"""
     query = """
@@ -75,10 +143,31 @@ def get_rejected_pedidos():
         WHERE estado = 'rejeitado' 
         ORDER BY criado_em ASC
     """
-    return db.execute_query(query)
+    pedidos = db.execute_query(query)
+    #Inicio de Teste ---------------
+    results = []
+    for pedido in pedidos:
+        
+        cliente = db.execute_query(
+            "SELECT nome, email, data_expiracao FROM cliente WHERE id = ?",
+            (pedido["cliente_id"],)
+        )
+        cliente = cliente[0] if cliente else None
+
+        # Construir o resultado final
+        result = {
+            **pedido,
+            "cliente_nome": cliente["nome"],
+            "cliente_email": cliente["email"],
+            "data_expiracao_atual": cliente["data_expiracao"],
+        }
+        results.append(result)
+
+    #Fim de Teste -------------------
+    return results
 
 
-@router.get("/{pedido_id}", response_model=PedidoResponse)
+@router.get("/{pedido_id}", response_model=PedidoResponseCliente)
 def get_pedido(pedido_id: str):
     """Obter pedido específico por ID"""
     query = "SELECT * FROM pedido WHERE id = ?"
@@ -89,8 +178,21 @@ def get_pedido(pedido_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Pedido {pedido_id} não encontrado"
         )
-    
-    return pedidos[0]
+    pedido = pedidos[0]
+    cliente = db.execute_query(
+        "SELECT nome, email, data_expiracao FROM cliente WHERE id = ?",
+        (pedido["cliente_id"],)
+    )
+    cliente = cliente[0] if cliente else None
+
+    # Construir o resultado final
+    result = {
+        **pedido,
+        "cliente_nome": cliente["nome"],
+        "cliente_email": cliente["email"],
+        "data_expiracao_atual": cliente["data_expiracao"],
+    }
+    return result
 
 
 @router.post("/create", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
@@ -139,6 +241,7 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
             detail=f"Pedido já foi {pedido['estado']}"
         )
     
+    
     try:
         # TRANSACTION START (context manager garante commit/rollback)
         with db.get_cursor() as cursor:
@@ -149,17 +252,17 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
             )
             
             # 2. Se renovação, atualizar cliente
+           
             if pedido['tipo_pedido'] == 'renovação':
-                if not request.nova_data_expiracao:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="nova_data_expiracao é obrigatória para renovações"
-                    )
-                
                 cursor.execute(
-                    "UPDATE cliente SET data_expiracao = ? WHERE id = ?",
-                    (request.nova_data_expiracao, pedido['cliente_id'])
+                    """
+                    UPDATE cliente
+                    SET data_expiracao = DATETIME(data_expiracao, '+30 days')
+                    WHERE id = ?
+                    """,
+                    (pedido['cliente_id'],)
                 )
+
             
             # 3. Criar log
             import secrets
@@ -173,7 +276,9 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
         # TRANSACTION END (auto-commit)
         query = "SELECT * FROM pedido WHERE id = ?"
         pedidos = db.execute_query(query, (pedido_id.strip(),))
-        return pedidos[0]
+        pedido = pedidos[0]
+
+        return pedido
         
     
     except HTTPException:

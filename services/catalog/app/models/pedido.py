@@ -34,12 +34,15 @@ class PedidoResponse(PedidoBase):
     class Config:
         from_attributes = True
 
+class PedidoResponseCliente(PedidoResponse):
+    cliente_nome: str
+    cliente_email:str
+    data_expiracao_atual: str
+
 
 class PedidoApprove(BaseModel):
     """Model para aprovar pedido"""
     admin_id: str = Field(..., description="ID do admin aprovando")
-    nova_data_expiracao: Optional[str] = Field(None, description="Nova data de expiração")
-
 
 class PedidoReject(BaseModel):
     """Model para rejeitar pedido"""

@@ -19,8 +19,8 @@ class PedidoService {
    * Listar todos os pedidos
    * GET /api/pedidos/all
    */
-  async getAll(): Promise<Pedido[]> {
-    return api.get<Pedido[]>("/api/pedidos/all");
+  async getAll(): Promise<PedidoComCliente[]> {
+    return api.get<PedidoComCliente[]>("/api/pedidos/all");
   }
 
   /**
@@ -58,11 +58,9 @@ class PedidoService {
   async approve(
     id: string,
     adminId: string,
-    novaDataExpiracao?: string
   ): Promise<Pedido> {
     const request: ApprovalRequest = {
       admin_id: adminId,
-      nova_data_expiracao: novaDataExpiracao,
     };
 
     return api.post<Pedido>(`/api/pedidos/${id}/approve`, request);
@@ -99,7 +97,7 @@ class PedidoService {
   /**
    * Obter pedidos aprovados
    */
-  async getApproved(): Promise<Pedido[]> {
+  async getApproved(): Promise<PedidoComCliente[]> {
     const pedidos = await this.getAll();
     return pedidos.filter((p) => p.estado === "aprovado");
   }
@@ -107,7 +105,7 @@ class PedidoService {
   /**
    * Obter pedidos rejeitados
    */
-  async getRejected(): Promise<Pedido[]> {
+  async getRejected(): Promise<PedidoComCliente[]> {
     const pedidos = await this.getAll();
     return pedidos.filter((p) => p.estado === "rejeitado");
   }

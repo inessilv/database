@@ -126,7 +126,44 @@ docker volume prune -f
 
 echo -e "${GREEN}✅ Limpeza adicional completa${NC}"
 echo ""
+# ============================================================================
+# KUBERNETES RESOURCES
+# ============================================================================
 
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "☸️  Kubernetes - Limpeza Namespace + PV"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if minikube status &>/dev/null; then
+    echo "🔍 Verificando recursos Kubernetes..."
+    
+    # Verificar se namespace existe
+    if kubectl get namespace ecatalog &>/dev/null; then
+        echo "🗑️  Removendo namespace 'ecatalog' (pods, services, pvc, deployments, etc)..."
+        kubectl delete namespace ecatalog
+        echo -e "${GREEN}✅ Namespace 'ecatalog' removido${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Namespace 'ecatalog' já não existe${NC}"
+    fi
+    
+    # Verificar e remover PV (não é apagado com namespace!)
+    if kubectl get pv database-pv &>/dev/null; then
+        echo "🗑️  Removendo PersistentVolume 'database-pv'..."
+        kubectl delete pv database-pv
+        echo -e "${GREEN}✅ PV 'database-pv' removido${NC}"
+    else
+        echo -e "${YELLOW}⚠️  PV 'database-pv' já não existe${NC}"
+    fi
+    
+else
+    echo -e "${YELLOW}⚠️  Minikube não está a correr${NC}"
+fi
+
+echo "🗑️  Removendo dados físicos do Database (hostPath)..."
+minikube ssh "sudo rm -rf /mnt/data/ecatalog" 2>/dev/null
+echo -e "${GREEN}✅ Dados físicos removidos${NC}"
+
+echo ""
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║            ✅ LIMPEZA SEGURA COMPLETA!                     ║"
 echo "╚════════════════════════════════════════════════════════════╝"

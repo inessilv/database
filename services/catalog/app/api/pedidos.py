@@ -8,7 +8,8 @@ from app.models.pedido import (
     PedidoCreate, 
     PedidoResponse,
     PedidoApprove,
-    PedidoReject
+    PedidoReject,
+    PedidoResponseCliente
 )
 from app.services.pedido_service import pedido_service
 
@@ -20,7 +21,7 @@ router = APIRouter()
 # ENDPOINTS PÚBLICOS
 # ============================================================================
 
-@router.get("/all", response_model=List[PedidoResponse])
+@router.get("/all", response_model=List[PedidoResponseCliente])
 async def get_all_pedidos():
     """
     Listar todos os pedidos
@@ -34,7 +35,7 @@ async def get_all_pedidos():
         )
 
 
-@router.get("/pending", response_model=List[PedidoResponse])
+@router.get("/pending", response_model=List[PedidoResponseCliente])
 async def get_pending_pedidos():
     """
     Listar pedidos pendentes
@@ -46,7 +47,7 @@ async def get_pending_pedidos():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao obter pedidos pendentes: {str(e)}"
         )
-@router.get("/approved", response_model=List[PedidoResponse])
+@router.get("/approved", response_model=List[PedidoResponseCliente])
 async def get_approved_pedidos():
     """
     Listar pedidos pendentes
@@ -59,7 +60,7 @@ async def get_approved_pedidos():
             detail=f"Erro ao obter pedidos aprovados: {str(e)}"
         )
 
-@router.get("/rejected", response_model=List[PedidoResponse])
+@router.get("/rejected", response_model=List[PedidoResponseCliente])
 async def get_rejected_pedidos():
     """
     Listar pedidos pendentes
@@ -73,7 +74,7 @@ async def get_rejected_pedidos():
         )
 
 
-@router.get("/{pedido_id}", response_model=PedidoResponse)
+@router.get("/{pedido_id}", response_model=PedidoResponseCliente)
 async def get_pedido(pedido_id: str):
     """
     Obter pedido específico por ID

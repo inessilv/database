@@ -44,7 +44,6 @@ export interface PedidoComCliente extends Pedido {
  */
 export interface ApprovalRequest {
   admin_id: string;
-  nova_data_expiracao?: string;  // Opcional, usado em renovações
 }
 
 /**

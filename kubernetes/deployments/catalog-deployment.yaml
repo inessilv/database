@@ -8,7 +8,7 @@ metadata:
     tier: backend
 spec:
   # Catalog é stateless, pode ter múltiplas replicas
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: catalog

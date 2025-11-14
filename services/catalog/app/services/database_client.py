@@ -172,12 +172,9 @@ class DatabaseClient:
         """POST /db/pedidos/"""
         return await self._request("POST", "/db/pedidos/", json=data)
     
-    async def approve_pedido(self, pedido_id: str, admin_id: str, 
-                            nova_data_expiracao: Optional[str] = None) -> Dict[str, Any]:
+    async def approve_pedido(self, pedido_id: str, admin_id: str) -> Dict[str, Any]:
         """POST /db/pedidos/{id}/approve - TRANSACTION"""
         payload = {"admin_id": admin_id}
-        if nova_data_expiracao:
-            payload["nova_data_expiracao"] = nova_data_expiracao
         return await self._request("POST", f"/db/pedidos/{pedido_id}/approve", json=payload)
     
     async def reject_pedido(self, pedido_id: str, admin_id: str) -> Dict[str, Any]:

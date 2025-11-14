@@ -26,7 +26,7 @@ interface UsePedidosReturn {
   
   // Métodos
   refreshPedidos: () => Promise<void>;
-  aprovarPedido: (id: string, novaDataExpiracao?: string) => Promise<void>;
+  aprovarPedido: (id: string) => Promise<void>;
   rejeitarPedido: (id: string) => Promise<void>;
   getPedidosPorEstado: (estado: "pendente" | "aprovado" | "rejeitado") => PedidoComCliente[];
 }
@@ -60,7 +60,7 @@ export function usePedidos(): UsePedidosReturn {
     setError(null);
 
     try {
-      const data = await pedidoService.getPending();
+      const data = await pedidoService.getAll();
       setPedidos(data);
     } catch (err: any) {
       console.error("Erro ao carregar pedidos:", err);
@@ -81,47 +81,28 @@ export function usePedidos(): UsePedidosReturn {
    * Aprovar pedido de renovação
    * Default: adiciona 30 dias à data de expiração atual
    */
-  const aprovarPedido = useCallback(
-    async (id: string, novaDataExpiracao?: string) => {
-      const user = getUser();
-      
-      if (!user) {
-        throw new Error("Utilizador não autenticado");
-      }
+const aprovarPedido = useCallback(
+  async (id: string) => {
+    const user = getUser();
+    if (!user) {
+      throw new Error("Utilizador não autenticado");
+    }
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        // Se não foi fornecida data, calcular +30 dias
-        let dataExpiracao = novaDataExpiracao;
-        
-        if (!dataExpiracao) {
-          const pedido = pedidos.find((p) => p.id === id);
-          
-          if (pedido) {
-            const dataAtual = new Date(pedido.data_expiracao_atual);
-            const nova = new Date(dataAtual);
-            nova.setDate(nova.getDate() + 30); // +30 dias
-            dataExpiracao = nova.toISOString().split("T")[0]; // YYYY-MM-DD
-          } else {
-            const hoje = new Date();
-            hoje.setDate(hoje.getDate() + 30);
-            dataExpiracao = hoje.toISOString().split("T")[0];
-          }
-        }
+    try {
+      const adminId = user.id;
+      await pedidoService.approve(id, adminId);
 
-        const adminId = user.id;
-        await pedidoService.approve(id, adminId, dataExpiracao);
-
-        // Atualizar lista local
-        setPedidos((prev) =>
-          prev.map((p) =>
-            p.id === id
-              ? { ...p, estado: "aprovado" as const, gerido_por: adminId }
-              : p
-          )
-        );
+      // Atualizar localmente
+      setPedidos((prev) =>
+        prev.map((p) =>
+          p.id === id
+            ? { ...p, estado: "aprovado" as const, gerido_por: adminId }
+            : p
+        )
+      );
 
         await refreshPedidos();
       } catch (err: any) {

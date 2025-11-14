@@ -8,7 +8,8 @@ from app.models.pedido import (
     PedidoUpdate, 
     PedidoResponse,
     PedidoApprove,
-    PedidoReject
+    PedidoReject,
+    PedidoResponseCliente
 )
 from app.services.database_client import db_client
 
@@ -16,30 +17,30 @@ from app.services.database_client import db_client
 class PedidoService:
     """Service para gestão de pedidos"""
     
-    async def get_all_pedidos(self) -> List[PedidoResponse]:
+    async def get_all_pedidos(self) -> List[PedidoResponseCliente]:
         """Obter todos os pedidos"""
         pedidos = await db_client.get_all_pedidos()
-        return [PedidoResponse(**p) for p in pedidos]
+        return [PedidoResponseCliente(**p) for p in pedidos]
     
-    async def get_pending_pedidos(self) -> List[PedidoResponse]:
+    async def get_pending_pedidos(self) -> List[PedidoResponseCliente]:
         """Obter pedidos pendentes"""
         pedidos = await db_client.get_pending_pedidos()
-        return [PedidoResponse(**p) for p in pedidos]
+        return [PedidoResponseCliente(**p) for p in pedidos]
     
-    async def get_approved_pedidos(self) -> List[PedidoResponse]:
+    async def get_approved_pedidos(self) -> List[PedidoResponseCliente]:
         """Obter pedidos aprovados"""
         pedidos = await db_client.get_approved_pedidos()
-        return [PedidoResponse(**p) for p in pedidos]
+        return [PedidoResponseCliente(**p) for p in pedidos]
     
-    async def get_rejected_pedidos(self) -> List[PedidoResponse]:
+    async def get_rejected_pedidos(self) -> List[PedidoResponseCliente]:
         """Obter pedidos rejeitados"""
         pedidos = await db_client.get_rejected_pedidos()
-        return [PedidoResponse(**p) for p in pedidos]
+        return [PedidoResponseCliente(**p) for p in pedidos]
     
-    async def get_pedido(self, pedido_id: str) -> PedidoResponse:
+    async def get_pedido(self, pedido_id: str) -> PedidoResponseCliente:
         """Obter pedido por ID"""
         pedido = await db_client.get_pedido(pedido_id)
-        return PedidoResponse(**pedido)
+        return PedidoResponseCliente(**pedido)
     
     async def create_pedido(self, pedido: PedidoCreate) -> PedidoResponse:
         """Criar novo pedido"""
@@ -59,8 +60,7 @@ class PedidoService:
         
         updated = await db_client.approve_pedido(
             pedido_id,
-            approve.admin_id,
-            approve.nova_data_expiracao
+            approve.admin_id
         )
         return PedidoResponse(**updated)
     
