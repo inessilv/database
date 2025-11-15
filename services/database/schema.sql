@@ -25,10 +25,9 @@ CREATE TABLE cliente (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    data_registo TEXT NOT NULL,
+    data_registo TEXT DEFAULT (datetime('now')),
     data_expiracao TEXT NOT NULL,
     criado_por TEXT NOT NULL,
-    criado_em TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (criado_por) REFERENCES admin(id)
 );
 

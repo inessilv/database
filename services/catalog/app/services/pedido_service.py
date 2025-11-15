@@ -1,7 +1,3 @@
-"""
-Pedido Service
-Lógica de negócio para Pedidos (renovação/revogação)
-"""
 from typing import List, Dict, Any
 from app.models.pedido import (
     PedidoCreate, 

@@ -1,11 +1,3 @@
-/**
- * Types Index
- * 
- * Exporta todos os types da aplicação
- * Uso: import { User, Demo, Cliente } from '@/types'
- */
-
-// Demo
 export type{
   Demo,
   DemoCreate,

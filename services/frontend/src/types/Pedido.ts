@@ -1,13 +1,3 @@
-/**
- * Pedido Types
- * 
- * Baseado no schema.sql e endpoints do Catalog Service
- * Pedidos de renovação ou revogação de acesso
- */
-
-/**
- * Pedido (completo)
- */
 export interface Pedido {
   id: string;
   cliente_id: string;

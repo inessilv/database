@@ -1,7 +1,3 @@
-"""
-Pedido CRUD Endpoints
-Tabela: pedido (id, cliente_id, estado, tipo_pedido, criado_em, gerido_por)
-"""
 from fastapi import APIRouter, HTTPException, status
 from typing import List, Optional, Literal
 from pydantic import BaseModel
@@ -50,7 +46,6 @@ def get_all_pedidos():
     """Listar todos os pedidos"""
     query = "SELECT * FROM pedido ORDER BY criado_em DESC"
     pedidos = db.execute_query(query)
-    #Inicio de Teste ---------------
     results = []
     for pedido in pedidos:
         
@@ -60,7 +55,6 @@ def get_all_pedidos():
         )
         cliente = cliente[0] if cliente else None
 
-        # Construir o resultado final
         result = {
             **pedido,
             "cliente_nome": cliente["nome"],
@@ -69,7 +63,6 @@ def get_all_pedidos():
         }
         results.append(result)
 
-    #Fim de Teste -------------------
     return results
 
 
@@ -82,7 +75,6 @@ def get_pending_pedidos():
         ORDER BY criado_em ASC
     """
     pedidos = db.execute_query(query)
-    #Inicio de Teste ---------------
     results = []
     for pedido in pedidos:
         
@@ -92,7 +84,6 @@ def get_pending_pedidos():
         )
         cliente = cliente[0] if cliente else None
 
-        # Construir o resultado final
         result = {
             **pedido,
             "cliente_nome": cliente["nome"],
@@ -101,7 +92,6 @@ def get_pending_pedidos():
         }
         results.append(result)
 
-    #Fim de Teste -------------------
     return results
 
 @router.get("/approved", response_model=List[PedidoResponseCliente])
@@ -113,7 +103,6 @@ def get_approved_pedidos():
         ORDER BY criado_em ASC
     """
     pedidos = db.execute_query(query)
-    #Inicio de Teste ---------------
     results = []
     for pedido in pedidos:
         
@@ -123,7 +112,6 @@ def get_approved_pedidos():
         )
         cliente = cliente[0] if cliente else None
 
-        # Construir o resultado final
         result = {
             **pedido,
             "cliente_nome": cliente["nome"],
@@ -132,7 +120,7 @@ def get_approved_pedidos():
         }
         results.append(result)
 
-    #Fim de Teste -------------------
+
     return results
 
 @router.get("/rejected", response_model=List[PedidoResponseCliente])
@@ -144,7 +132,6 @@ def get_rejected_pedidos():
         ORDER BY criado_em ASC
     """
     pedidos = db.execute_query(query)
-    #Inicio de Teste ---------------
     results = []
     for pedido in pedidos:
         
@@ -154,7 +141,6 @@ def get_rejected_pedidos():
         )
         cliente = cliente[0] if cliente else None
 
-        # Construir o resultado final
         result = {
             **pedido,
             "cliente_nome": cliente["nome"],
@@ -163,7 +149,7 @@ def get_rejected_pedidos():
         }
         results.append(result)
 
-    #Fim de Teste -------------------
+
     return results
 
 
@@ -185,7 +171,6 @@ def get_pedido(pedido_id: str):
     )
     cliente = cliente[0] if cliente else None
 
-    # Construir o resultado final
     result = {
         **pedido,
         "cliente_nome": cliente["nome"],
@@ -225,7 +210,6 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
     2. Se renovação: atualiza data_expiracao do cliente
     3. Cria log de aprovação
     """
-    # Buscar pedido
     pedidos = db.execute_query("SELECT * FROM pedido WHERE id = ?", (pedido_id,))
     if not pedidos:
         raise HTTPException(
@@ -243,7 +227,6 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
     
     
     try:
-        # TRANSACTION START (context manager garante commit/rollback)
         with db.get_cursor() as cursor:
             # 1. Atualizar pedido
             cursor.execute(
@@ -273,7 +256,6 @@ def approve_pedido(pedido_id: str, request: ApproveRejectRequest):
                 (log_id, pedido['cliente_id'], 
                  f"Pedido de {pedido['tipo_pedido']} aprovado")
             )
-        # TRANSACTION END (auto-commit)
         query = "SELECT * FROM pedido WHERE id = ?"
         pedidos = db.execute_query(query, (pedido_id.strip(),))
         pedido = pedidos[0]
@@ -297,7 +279,6 @@ def reject_pedido(pedido_id: str, request: ApproveRejectRequest):
     1. Atualiza pedido para 'rejeitado'
     2. Cria log de rejeição
     """
-    # Buscar pedido
     query = "SELECT * FROM pedido WHERE id = ?"
     pedidos = db.execute_query(query, (pedido_id.strip(),))
     
@@ -317,13 +298,11 @@ def reject_pedido(pedido_id: str, request: ApproveRejectRequest):
     
     admin = db.execute_query("SELECT id FROM admin WHERE id = ?", (request.admin_id,))
     if not admin:
-        print(f"[WARN] Administrador {request.admin_id} não encontrado")
         raise HTTPException(
             status_code=400,
             detail=f"Administrador {request.admin_id} não encontrado"
         )
     try:
-        # TRANSACTION START
         with db.get_cursor() as cursor:
             # 1. Atualizar pedido
         
@@ -333,24 +312,18 @@ def reject_pedido(pedido_id: str, request: ApproveRejectRequest):
             )
             
 
-            # # 2. Criar log
-            # import secrets
-            # log_id = secrets.token_hex(16)
-            # cursor.execute(
-            #     """INSERT INTO log (id, cliente_id, tipo, mensagem)
-            #        VALUES (?, ?, 'acesso_revogado', ?)""",
-            #     (log_id, pedido['cliente_id'], 
-            #      f"Pedido de {pedido['tipo_pedido']} rejeitado")
-            # )
-        # TRANSACTION END
+            # 2. Criar log
+            import secrets
+            log_id = secrets.token_hex(16)
+            cursor.execute(
+                """INSERT INTO log (id, cliente_id, tipo, mensagem)
+                   VALUES (?, ?, 'acesso_revogado', ?)""",
+                (log_id, pedido['cliente_id'], 
+                 f"Pedido de {pedido['tipo_pedido']} rejeitado")
+            )
         query = "SELECT * FROM pedido WHERE id = ?"
         pedidos = db.execute_query(query, (pedido_id.strip(),))
         return pedidos[0]
-        # return {
-        #     "message": "Pedido rejeitado",
-        #     "pedido_id": pedido_id,
-        #     "tipo_pedido": pedido['tipo_pedido']
-        # }
     
     except Exception as e:
          import traceback; traceback.print_exc()

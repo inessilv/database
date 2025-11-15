@@ -1,7 +1,3 @@
-"""
-Pedido Models
-Models Pydantic para Pedidos de renovação/revogação
-"""
 from pydantic import BaseModel, Field
 from typing import Optional
 

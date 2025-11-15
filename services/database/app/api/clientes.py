@@ -1,7 +1,3 @@
-"""
-Cliente CRUD Endpoints
-Tabela: cliente (id, nome, email, password_hash, data_registo, data_expiracao, criado_por, criado_em)
-"""
 from fastapi import APIRouter, HTTPException, status
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr
@@ -22,7 +18,6 @@ class ClienteBase(BaseModel):
 
 class ClienteCreate(ClienteBase):
     password_hash: str
-    data_registo: str  # ISO format: "2025-11-05"
     data_expiracao: str  # ISO format: "2025-12-31"
     criado_por: str  # admin_id
 
@@ -31,15 +26,12 @@ class ClienteUpdate(BaseModel):
     nome: Optional[str] = None
     email: Optional[EmailStr] = None
     password_hash: Optional[str] = None
-    data_expiracao: Optional[str] = None  # Para renovações
 
 
 class ClienteResponse(ClienteBase):
     id: str
-    data_registo: str
     data_expiracao: str
     criado_por: str
-    criado_em: str
 
 
 # ============================================================================
@@ -49,7 +41,7 @@ class ClienteResponse(ClienteBase):
 @router.get("/all", response_model=List[ClienteResponse])
 def get_all_clientes():
     """Listar todos os clientes"""
-    query = "SELECT id, nome, email, data_registo, data_expiracao, criado_por, criado_em FROM cliente"
+    query = "SELECT id, nome, email, data_expiracao, criado_por, data_registo FROM cliente"
     return db.execute_query(query)
 
 
@@ -57,7 +49,7 @@ def get_all_clientes():
 def get_active_clientes():
     """Listar clientes ativos (não expirados)"""
     query = """
-        SELECT id, nome, email, data_registo, data_expiracao, criado_por, criado_em
+        SELECT id, nome, email, data_expiracao, criado_por, data_registo
         FROM cliente
         WHERE datetime(data_expiracao) >= datetime('now')
         AND datetime(data_registo) <= datetime('now')
@@ -70,7 +62,7 @@ def get_active_clientes():
 def get_expired_clientes():
     """Listar clientes expirados"""
     query = """
-        SELECT id, nome, email, data_registo, data_expiracao, criado_por, criado_em
+        SELECT id, nome, email, data_expiracao, criado_por, data_registo
         FROM cliente
         WHERE datetime(data_expiracao) < datetime('now')
         ORDER BY data_expiracao DESC
@@ -82,7 +74,7 @@ def get_expired_clientes():
 def get_cliente(cliente_id: str):
     """Obter cliente específico por ID"""
     query = """
-        SELECT id, nome, email, data_registo, data_expiracao, criado_por, criado_em
+        SELECT id, nome, email, data_expiracao, criado_por, data_registo
         FROM cliente WHERE id = ?
     """
     clientes = db.execute_query(query, (cliente_id,))
@@ -100,7 +92,7 @@ def get_cliente(cliente_id: str):
 def get_cliente_by_email(email: str):
     """Obter cliente por email"""
     query = """
-        SELECT id, nome, email, data_registo, data_expiracao, criado_por, criado_em
+        SELECT id, nome, email, data_expiracao, criado_por, data_registo
         FROM cliente WHERE email = ?
     """
     clientes = db.execute_query(query, (email,))
@@ -139,7 +131,7 @@ def create_cliente(cliente: ClienteCreate):
     cliente_id = secrets.token_hex(16)
     
     query = """
-        INSERT INTO cliente (id, nome, email, password_hash, data_registo, data_expiracao, criado_por)
+        INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """
     
@@ -147,7 +139,7 @@ def create_cliente(cliente: ClienteCreate):
         db.execute_insert(
             query,
             (cliente_id, cliente.nome, cliente.email, cliente.password_hash,
-             cliente.data_registo, cliente.data_expiracao, cliente.criado_por)
+             cliente.data_expiracao, cliente.criado_por)
         )
     except Exception as e:
         if "UNIQUE constraint failed" in str(e):
@@ -190,9 +182,6 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
         updates.append("password_hash = ?")
         params.append(cliente.password_hash)
     
-    if cliente.data_expiracao is not None:
-        updates.append("data_expiracao = ?")
-        params.append(cliente.data_expiracao)
     
     if not updates:
         return get_cliente(cliente_id)
@@ -215,24 +204,6 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
     
     return get_cliente(cliente_id)
 
-
-@router.post("/{cliente_id}/extend")
-def extend_cliente_access(cliente_id: str, nova_data_expiracao: str):
-    """
-    Extender acesso de cliente (renovação)
-    Body: {"nova_data_expiracao": "2026-01-01"}
-    """
-    existing = db.execute_query("SELECT id FROM cliente WHERE id = ?", (cliente_id,))
-    if not existing:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Cliente {cliente_id} não encontrado"
-        )
-    
-    query = "UPDATE cliente SET data_expiracao = ? WHERE id = ?"
-    db.execute_update(query, (nova_data_expiracao, cliente_id))
-    
-    return {"message": "Acesso renovado com sucesso", "nova_data_expiracao": nova_data_expiracao}
 
 
 @router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)

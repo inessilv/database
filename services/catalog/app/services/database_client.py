@@ -1,6 +1,3 @@
-"""
-Database Client - HTTP Client para comunicar com Pod Database
-"""
 import httpx
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
@@ -99,11 +96,7 @@ class DatabaseClient:
         """PUT /db/clientes/{id}"""
         return await self._request("PUT", f"/db/clientes/{cliente_id}", json=data)
     
-    async def extend_cliente_access(self, cliente_id: str, nova_data: str) -> Dict[str, Any]:
-        """POST /db/clientes/{id}/extend"""
-        return await self._request("POST", f"/db/clientes/{cliente_id}/extend", 
-                                  params={"nova_data_expiracao": nova_data})
-    
+ 
     async def delete_cliente(self, cliente_id: str) -> None:
         """DELETE /db/clientes/{id}"""
         await self._request("DELETE", f"/db/clientes/{cliente_id}")

@@ -1,10 +1,3 @@
-/**
- * usePedidos Hook (Adaptado)
- * 
- * Custom hook para gestão de pedidos (renovação/revogação)
- * Versão adaptada para funcionar sem useAuth hook
- */
-
 import { useState, useEffect, useCallback } from "react";
 import { pedidoService } from "../services/pedidoService";
 import type {PedidoComCliente } from "../types/Pedido";

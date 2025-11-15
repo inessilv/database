@@ -1,10 +1,3 @@
-/**
- * PedidoCard Component
- * 
- * Card para mostrar informações de um pedido
- * Inclui ações para aprovar/rejeitar (se pendente)
- */
-
 import type { PedidoComCliente } from "../types/Pedido";
 
 interface PedidoCardProps {

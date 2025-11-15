@@ -129,46 +129,38 @@ INSERT INTO cliente (id, nome, email, password_hash,
      'admin002');
 
 -- Cliente 2: EXPIRA EM BREVE (3 dias)
-INSERT INTO cliente (id, nome, email, password_hash,
-                     data_registo, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, password_hash,data_expiracao, criado_por) VALUES
     ('cliente002', 
      'Ana Costa', 
      'ana.costa@empresa-b.pt',
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
-     datetime('now', '-27 days'), 
      datetime('now', '+3 days'), 
      'admin003');
 
 -- Cliente 3: EXPIRADO (há 5 dias)
-INSERT INTO cliente (id, nome, email, password_hash,
-                     data_registo, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por) VALUES
     ('cliente003', 
      'Rui Ferreira', 
      'rui.ferreira@empresa-c.com',
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
-     datetime('now', '-60 days'), 
      datetime('now', '-5 days'), 
      'admin002');
 
 -- Cliente 4: FUTURO (acesso começa em 2 dias)
-INSERT INTO cliente (id, nome, email, password_hash,
-                     data_registo, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por) VALUES
     ('cliente004', 
      'Sofia Almeida', 
      'sofia.almeida@empresa-d.pt',
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
-     datetime('now', '+2 days'), 
      datetime('now', '+32 days'), 
      'admin003');
 
 -- Cliente 5: Outro cliente ativo
-INSERT INTO cliente (id, nome, email, password_hash,
-                     data_registo, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por) VALUES
     ('cliente005', 
      'Carlos Mendes', 
      'carlos.mendes@empresa-e.com',
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
-     datetime('now', '-15 days'), 
      datetime('now', '+15 days'), 
      'admin002');
 

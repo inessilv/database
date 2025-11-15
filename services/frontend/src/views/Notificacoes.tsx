@@ -1,11 +1,3 @@
-/**
- * Notificacoes View (Refatorada)
- * 
- * Gestão de pedidos de renovação/revogação
- * Apenas admins podem aceder
- * Usa services + types + styles.css
- */
-
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePedidos } from "../hooks/usePedidos";

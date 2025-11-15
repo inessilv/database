@@ -1,7 +1,3 @@
-"""
-Pedido API Endpoints (Públicos)
-Endpoints para gestão de pedidos de renovação/revogação
-"""
 from fastapi import APIRouter, HTTPException, status
 from typing import List
 from app.models.pedido import (

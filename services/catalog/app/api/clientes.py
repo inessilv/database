@@ -140,24 +140,6 @@ async def update_cliente(cliente_id: str, cliente: ClienteUpdate):
         )
 
 
-@router.post("/{cliente_id}/extend", response_model=ClienteResponse)
-async def extend_cliente_access(cliente_id: str, nova_data_expiracao: str):
-    """
-    Renovar acesso do cliente
-    """
-    try:
-        return await cliente_service.extend_cliente_access(cliente_id, nova_data_expiracao)
-    except Exception as e:
-        if "404" in str(e) or "não encontrado" in str(e).lower():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Cliente {cliente_id} não encontrado"
-            )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao renovar acesso: {str(e)}"
-        )
-
 
 @router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_cliente(cliente_id: str):

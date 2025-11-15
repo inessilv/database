@@ -49,15 +49,6 @@ class ClienteService {
     return api.put<Cliente>(`/api/clientes/${id}`, cliente);
   }
 
-  /**
-   * Renovar acesso do cliente (extender data_expiracao)
-   * PUT /api/clientes/{id}/extend
-   */
-  async extendAccess(id: string, novaData: string): Promise<Cliente> {
-    return api.put<Cliente>(`/api/clientes/${id}/extend`, {
-      nova_data_expiracao: novaData,
-    });
-  }
 
   /**
    * Revogar acesso do cliente (apagar)

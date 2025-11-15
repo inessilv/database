@@ -1,10 +1,3 @@
-/**
- * Pedido Service
- * 
- * Serviço de gestão de pedidos (renovação/revogação)
- * Endpoints: /api/pedidos/*
- */
-
 import { api } from "./api";
 import type {
   Pedido,
