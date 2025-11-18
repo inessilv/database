@@ -68,15 +68,7 @@ class ClienteService:
         updated = await db_client.update_cliente(cliente_id, update_data)
         return ClienteResponse(**updated)
     
-    async def extend_cliente_access(self, cliente_id: str, nova_data: str) -> ClienteResponse:
-        """Renovar acesso do cliente"""
-        updated = await db_client.extend_cliente_access(cliente_id, nova_data)
-        return ClienteResponse(**updated)
-    
-    async def delete_cliente(self, cliente_id: str) -> None:
-        """Apagar cliente"""
-        await db_client.delete_cliente(cliente_id)
-    
+
     async def verify_cliente_credentials(self, email: str, password: str) -> ClienteResponse:
         """
         Verificar credenciais de login

@@ -30,6 +30,7 @@ class ClienteUpdate(BaseModel):
 
 class ClienteResponse(ClienteBase):
     id: str
+    data_registo: str
     data_expiracao: str
     criado_por: str
 
@@ -52,7 +53,6 @@ def get_active_clientes():
         SELECT id, nome, email, data_expiracao, criado_por, data_registo
         FROM cliente
         WHERE datetime(data_expiracao) >= datetime('now')
-        AND datetime(data_registo) <= datetime('now')
         ORDER BY data_expiracao DESC
     """
     return db.execute_query(query)
@@ -132,7 +132,7 @@ def create_cliente(cliente: ClienteCreate):
     
     query = """
         INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
     """
     
     try:
@@ -203,18 +203,3 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
         )
     
     return get_cliente(cliente_id)
-
-
-
-@router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_cliente(cliente_id: str):
-    """Apagar cliente"""
-    rows_affected = db.execute_update("DELETE FROM cliente WHERE id = ?", (cliente_id,))
-    
-    if rows_affected == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Cliente {cliente_id} não encontrado"
-        )
-    
-    return None

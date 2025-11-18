@@ -139,23 +139,3 @@ async def update_cliente(cliente_id: str, cliente: ClienteUpdate):
             detail=f"Erro ao atualizar cliente: {str(e)}"
         )
 
-
-
-@router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_cliente(cliente_id: str):
-    """
-    Apagar cliente
-    """
-    try:
-        await cliente_service.delete_cliente(cliente_id)
-        return None
-    except Exception as e:
-        if "404" in str(e) or "não encontrado" in str(e).lower():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Cliente {cliente_id} não encontrado"
-            )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao apagar cliente: {str(e)}"
-        )

@@ -959,9 +959,6 @@ body[data-theme="dark"] .auth-card .input {
    ========================= */
 .page {
     padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
 }
 
 .page-title {

@@ -96,10 +96,6 @@ class DatabaseClient:
         """PUT /db/clientes/{id}"""
         return await self._request("PUT", f"/db/clientes/{cliente_id}", json=data)
     
- 
-    async def delete_cliente(self, cliente_id: str) -> None:
-        """DELETE /db/clientes/{id}"""
-        await self._request("DELETE", f"/db/clientes/{cliente_id}")
     
     # ========================================================================
     # DEMOS
