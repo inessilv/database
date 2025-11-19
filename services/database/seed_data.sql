@@ -20,23 +20,12 @@ INSERT INTO admin (id, nome, email, password_hash, contacto) VALUES
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
      '+351 910 000 003');
 
--- ============================================================================
--- DOCKER IMAGES
--- ============================================================================
-
-INSERT INTO docker_images (id, nome_imagem, versao_imagem, url, descrição) VALUES
-    ('img001', 'ltplabs/crm-demo', 'v1.2.0', 'registry.ltplabs.com', 'CRM Demo Application'),
-    ('img002', 'ltplabs/inventory-demo', 'v2.0.1', 'registry.ltplabs.com', 'Inventory Management Demo'),
-    ('img003', 'ltplabs/analytics-demo', 'v1.5.3', 'registry.ltplabs.com', 'Analytics Dashboard Demo'),
-    ('img004', 'ltplabs/ecommerce-demo', 'v3.1.0', 'registry.ltplabs.com', 'E-commerce Platform Demo'),
-    ('img005', 'ltplabs/iot-dashboard', 'v1.0.0', 'registry.ltplabs.com', 'IoT Monitoring Dashboard');
 
 -- ============================================================================
 -- DEMOS
 -- ============================================================================
 
-INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_projeto, 
-                  imagem_docker, comercial_nome, comercial_contacto, 
+INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_projeto, comercial_nome, comercial_contacto, 
                   comercial_foto_url, url, estado, criado_por) VALUES
     ('demo001', 
      'Solução CRM Cloud', 
@@ -45,11 +34,10 @@ INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_
      'Vendas & Marketing', 
      'crm,vendas,clientes,pipeline', 
      'LTP011',
-     'ltplabs/crm-demo:v1.2.0', 
      'João Silva', 
      '+351 910 000 002',
      'https://avatars.ltplabs.com/joao.jpg',
-     'https://crm-demo.ltplabs.com', 
+     'https://www.youtube.com/', 
      'ativa', 
      'admin002'),
      
@@ -60,11 +48,10 @@ INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_
      'Supply Chain', 
      'inventario,armazem,stock,previsao', 
      'LTP022',
-     'ltplabs/inventory-demo:v2.0.1', 
      'Maria Santos', 
      '+351 910 000 003',
      'https://avatars.ltplabs.com/maria.jpg',
-     'https://inventory-demo.ltplabs.com', 
+     'https://www.ola.pt/', 
      'ativa', 
      'admin003'),
      
@@ -74,12 +61,11 @@ INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_
      'Finanças', 
      'Business Intelligence', 
      'analytics,bi,reporting,dashboards', 
-     'LTP033',
-     'ltplabs/analytics-demo:v1.5.3', 
+     'LTP033', 
      'João Silva', 
      '+351 910 000 002',
      'https://avatars.ltplabs.com/joao.jpg',
-     'https://analytics-demo.ltplabs.com', 
+     'https://www.facebook.com/', 
      'ativa', 
      'admin002'),
      
@@ -90,11 +76,10 @@ INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_
      'E-Commerce', 
      'ecommerce,retalho,loja,online', 
      'LTP044',
-     'ltplabs/ecommerce-demo:v3.1.0', 
      'Maria Santos', 
      '+351 910 000 003',
      'https://avatars.ltplabs.com/maria.jpg',
-     'https://ecommerce-demo.ltplabs.com', 
+     'https://www.instagram.com/', 
      'ativa', 
      'admin003'),
      
@@ -105,11 +90,10 @@ INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_
      'IoT & Indústria 4.0', 
      'iot,monitorizacao,sensores,industria', 
      'LTP055',
-     'ltplabs/iot-dashboard:v1.0.0', 
      'João Silva', 
      '+351 910 000 002',
      'https://avatars.ltplabs.com/joao.jpg',
-     'https://iot-demo.ltplabs.com', 
+     'https://x.com/?lang=pt', 
      'ativa', 
      'admin002');
 
@@ -243,7 +227,6 @@ INSERT INTO pedido (id, cliente_id, tipo_pedido, estado, gerido_por) VALUES
 SELECT 'Admins' as tabela, COUNT(*) as total FROM admin
 UNION ALL SELECT 'Clientes', COUNT(*) FROM cliente
 UNION ALL SELECT 'Demos', COUNT(*) FROM demo
-UNION ALL SELECT 'Docker Images', COUNT(*) FROM docker_images
 UNION ALL SELECT 'Logs', COUNT(*) FROM log
 UNION ALL SELECT 'Pedidos', COUNT(*) FROM pedido;
 

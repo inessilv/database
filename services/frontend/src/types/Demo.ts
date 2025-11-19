@@ -1,7 +1,7 @@
 /**
  * Demo Types
  * 
- * Baseado no schema.sql e endpoints do Catalog Service
+ * Baseado no schema.sql atualizado
  */
 
 /**
@@ -11,13 +11,12 @@ export interface Demo {
   id: string;
   nome: string;
   descricao: string | null;
-  url: string | null;
-  estado: "ativa" | "manutenção" | "descontinuada";
-  vertical: string | null;          // Ex: "Retalho", "Manufatura", "Finanças"
+  url: string;
+  estado: "ativa" | "inativa" | "manutenção";
+  vertical: string | null;          // Ex: "Retail", "Manufacturing", "Finance"
   horizontal: string | null;        // Ex: "Supply Chain", "CRM", "Analytics"
   keywords: string | null;          // Comma-separated
-  codigo_projeto: string | null;    // Ex: "LTP011"
-  imagem_docker: string;            // Ex: "ltplabs/crm-demo:v1.2.0"
+  codigo_projeto: string | null;    // Ex: "LTP-001"          
   comercial_nome: string | null;
   comercial_contacto: string | null;
   comercial_foto_url: string | null;
@@ -33,12 +32,11 @@ export interface DemoCreate {
   nome: string;
   descricao?: string;
   url?: string;
-  estado: "ativa" | "manutenção" | "descontinuada";
+  estado: "ativa" | "inativa" | "manutenção";
   vertical?: string;
   horizontal?: string;
   keywords?: string;
   codigo_projeto?: string;
-  imagem_docker: string;
   comercial_nome?: string;
   comercial_contacto?: string;
   comercial_foto_url?: string;
@@ -53,12 +51,11 @@ export interface DemoUpdate {
   nome?: string;
   descricao?: string;
   url?: string;
-  estado?: "ativa" | "manutenção" | "descontinuada";
+  estado?: "ativa" | "inativa" | "manutenção";
   vertical?: string;
   horizontal?: string;
   keywords?: string;
   codigo_projeto?: string;
-  imagem_docker?: string;
   comercial_nome?: string;
   comercial_contacto?: string;
   comercial_foto_url?: string;

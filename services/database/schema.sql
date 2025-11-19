@@ -42,14 +42,13 @@ CREATE INDEX idx_client_access_dates ON cliente(data_registo, data_expiracao);
 CREATE TABLE demo (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     estado TEXT DEFAULT 'ativa' CHECK(estado IN ('ativa', 'inativa', 'manutenção')),
-    url TEXT,
+    url TEXT NOT NULL,
     nome VARCHAR(100) NOT NULL,
     descrição TEXT,
     vertical VARCHAR(50),     -- Ex: Retail, Manufacturing, Finance
     horizontal VARCHAR(50),   -- Ex: Supply Chain, CRM, Analytics
     keywords TEXT,     -- Comma-separated para pesquisa simples
     codigo_projeto CHAR(6) UNIQUE,
-    imagem_docker TEXT NOT NULL,  -- Ex: 'ltplabs/crm-demo:v1.2.0'
     comercial_nome VARCHAR(100),
     comercial_contacto VARCHAR(20),
     comercial_foto_url VARCHAR(255),
@@ -110,20 +109,7 @@ CREATE INDEX idx_logs_demo ON log(demo_id);
 CREATE INDEX idx_logs_timestamp ON log(timestamp);
 CREATE INDEX idx_logs_event_type ON log(tipo);
 
--- ============================================================================
--- DOCKER IMAGES TABLE
--- ============================================================================
-CREATE TABLE docker_images (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-    nome_imagem TEXT UNIQUE NOT NULL,
-    versao_imagem TEXT NOT NULL DEFAULT 'latest',
-    url TEXT,
-    descrição TEXT,
-    criado_em TEXT DEFAULT (datetime('now')),
-    atualizado_em TEXT DEFAULT (datetime('now'))
-);
-CREATE INDEX idx_docker_images_name ON docker_images(nome_imagem);
-CREATE INDEX idx_docker_images_version ON docker_images(versao_imagem);
+
 
 -- ============================================================================
 -- TRIGGERS para updated_at
@@ -135,11 +121,7 @@ BEGIN
     UPDATE demo SET atualizado_em = datetime('now') WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_docker_images_timestamp 
-AFTER UPDATE ON docker_images
-BEGIN
-    UPDATE docker_images SET atualizado_em = datetime('now') WHERE id = NEW.id;
-END;
+
 
 -- ============================================================================
 -- VIEWS úteis

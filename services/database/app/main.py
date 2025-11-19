@@ -73,7 +73,7 @@ async def root():
 # INCLUIR ROUTERS
 # ============================================================================
 
-from app.api import clientes, demos, pedidos, logs, docker_images, views
+from app.api import clientes, demos, pedidos, logs, views
 
 # Admin endpoints
 app.include_router(
@@ -108,13 +108,6 @@ app.include_router(
     logs.router,
     prefix="/db/logs",
     tags=["Logs"]
-)
-
-# Docker Images endpoints
-app.include_router(
-    docker_images.router,
-    prefix="/db/docker-images",
-    tags=["Docker Images"]
 )
 
 # Views endpoints

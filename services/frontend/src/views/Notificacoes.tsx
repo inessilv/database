@@ -1,3 +1,10 @@
+/**
+ * Notificacoes View (Refactored)
+ * 
+ * Vista de gestão de pedidos de renovação
+ * Styling alinhado com Clientes.tsx
+ */
+
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePedidos } from "../hooks/usePedidos";
@@ -138,7 +145,7 @@ export default function Notificacoes({ user }: Props) {
   };
 
   /**
-   * Renderizar tabs
+   * Renderizar tabs (estilo Clientes.tsx)
    */
   const renderTabs = () => {
     const tabs: { key: TabType; label: string; count: number }[] = [
@@ -149,17 +156,37 @@ export default function Notificacoes({ user }: Props) {
     ];
 
     return (
-      <div className="tabs-nav" style={{ marginBottom: "2rem" }}>
+      <div
+        className="tabs-nav"
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "20px",
+          borderBottom: "2px solid var(--stroke)",
+          paddingBottom: "0",
+        }}
+      >
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={activeTab === tab.key ? "active" : ""}
-            style={{ 
+            style={{
               position: "relative",
               display: "inline-flex",
               alignItems: "center",
-              gap: "0.5rem"
+              gap: "8px",
+              padding: "12px 20px",
+              background: "transparent",
+              border: "none",
+              borderBottom:
+                activeTab === tab.key
+                  ? "2px solid var(--primary)"
+                  : "2px solid transparent",
+              color: activeTab === tab.key ? "var(--primary)" : "var(--muted)",
+              fontWeight: activeTab === tab.key ? "700" : "600",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              marginBottom: "-2px",
             }}
           >
             {tab.label}
@@ -167,12 +194,13 @@ export default function Notificacoes({ user }: Props) {
               <span
                 className="badge"
                 style={{
-                  backgroundColor: activeTab === tab.key ? "var(--brand)" : "var(--muted-bg)",
+                  backgroundColor:
+                    activeTab === tab.key ? "var(--primary)" : "var(--stroke)",
                   color: activeTab === tab.key ? "white" : "var(--text)",
                   padding: "2px 8px",
                   borderRadius: "999px",
                   fontSize: "0.75rem",
-                  fontWeight: "600"
+                  fontWeight: "600",
                 }}
               >
                 {tab.count}
@@ -185,7 +213,7 @@ export default function Notificacoes({ user }: Props) {
   };
 
   /**
-   * Renderizar paginação
+   * Renderizar paginação (estilo Clientes.tsx)
    */
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -196,12 +224,25 @@ export default function Notificacoes({ user }: Props) {
     }
 
     return (
-      <div className="pagination" style={{ marginTop: "2rem", textAlign: "center" }}>
+      <div
+        className="pagination"
+        style={{
+          marginTop: "24px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
         <button
           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
           disabled={currentPage === 1}
           className="btn-ghost"
-          style={{ marginRight: "0.5rem" }}
+          style={{
+            padding: "8px 12px",
+            opacity: currentPage === 1 ? 0.5 : 1,
+            cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          }}
         >
           ← Anterior
         </button>
@@ -210,10 +251,10 @@ export default function Notificacoes({ user }: Props) {
           <button
             key={page}
             onClick={() => setCurrentPage(page)}
-            className={currentPage === page ? "btn-primary" : "btn-ghost"}
-            style={{ 
-              margin: "0 0.25rem",
-              minWidth: "2.5rem"
+            className={currentPage === page ? "button" : "btn-ghost"}
+            style={{
+              padding: "8px 12px",
+              minWidth: "40px",
             }}
           >
             {page}
@@ -224,7 +265,11 @@ export default function Notificacoes({ user }: Props) {
           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
           disabled={currentPage === totalPages}
           className="btn-ghost"
-          style={{ marginLeft: "0.5rem" }}
+          style={{
+            padding: "8px 12px",
+            opacity: currentPage === totalPages ? 0.5 : 1,
+            cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+          }}
         >
           Seguinte →
         </button>
@@ -233,167 +278,185 @@ export default function Notificacoes({ user }: Props) {
   };
 
   /**
-   * Loading skeleton
+   * Loading skeleton (estilo Clientes.tsx)
    */
   if (loading && pedidos.length === 0) {
     return (
-      <div className="page-container">
-        <h1 className="page-title">Notificações</h1>
-        <div className="loading-skeleton">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="skeleton-item"
-              style={{ 
-                height: "10rem", 
-                backgroundColor: "var(--card-bg)",
-                borderRadius: "12px",
-                marginBottom: "1rem",
-                animation: "pulse 1.5s ease-in-out infinite"
-              }}
-            />
-          ))}
+      <div className="page">
+        <div className="page-max">
+          <h1 className="page-title">Notificações</h1>
+          <div style={{ marginTop: "24px" }}>
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  height: "120px",
+                  backgroundColor: "var(--bg-2)",
+                  borderRadius: "12px",
+                  marginBottom: "16px",
+                  animation: "pulse 1.5s ease-in-out infinite",
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   /**
-   * Error state
+   * Error state (estilo Clientes.tsx)
    */
   if (error) {
     return (
-      <div className="page-container">
-        <h1 className="page-title">Notificações</h1>
-        <div className="error-state" style={{
-          backgroundColor: "var(--error-bg, #fee)",
-          border: "1px solid var(--error-border, #fcc)",
-          borderRadius: "12px",
-          padding: "2rem",
-          textAlign: "center"
-        }}>
-          <p style={{ color: "var(--error-text, #c00)", fontWeight: "600", marginBottom: "1rem" }}>
-            ❌ {error}
-          </p>
-          <button
-            onClick={refreshPedidos}
-            className="btn-primary"
+      <div className="page">
+        <div className="page-max">
+          <h1 className="page-title">Notificações</h1>
+          <div
+            className="card"
+            style={{
+              marginTop: "24px",
+              padding: "32px",
+              textAlign: "center",
+              backgroundColor: "#fee",
+              border: "1px solid #fcc",
+            }}
           >
-            Tentar novamente
-          </button>
+            <p style={{ color: "#c00", fontWeight: "600", marginBottom: "16px" }}>
+              ❌ {error}
+            </p>
+            <button onClick={refreshPedidos} className="button">
+              Tentar novamente
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container notifs">
-      {/* Header */}
-      <div className="page-topbar">
-        <h1 className="page-title">Notificações</h1>
-        <div className="page-actions">
-          <button
-            onClick={refreshPedidos}
-            disabled={loading}
-            className="btn-primary"
-          >
-            {loading ? "A atualizar..." : "🔄 Atualizar"}
-          </button>
+    <div className="page">
+      <div className="page-max">
+        {/* Header (estilo Clientes.tsx) */}
+        <div className="list-header">
+          <h1 className="page-title">Notificações</h1>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button onClick={refreshPedidos} disabled={loading} className="btn-ghost">
+              {loading ? "A atualizar..." : "🔄 Atualizar"}
+            </button>
+          </div>
         </div>
+
+        {/* Tabs */}
+        {renderTabs()}
+
+        {/* Lista de pedidos */}
+        {pedidosPaginados.length === 0 ? (
+          <div
+            className="card"
+            style={{
+              padding: "64px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "4rem", marginBottom: "16px" }}>
+              {activeTab === "pendentes" ? "🎉" : "📭"}
+            </div>
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: "700",
+                marginBottom: "8px",
+                color: "var(--text)",
+              }}
+            >
+              {activeTab === "pendentes"
+                ? "Nenhum pedido pendente!"
+                : "Nenhum pedido encontrado"}
+            </h3>
+            <p style={{ color: "var(--muted)" }}>
+              {activeTab === "pendentes"
+                ? "Boa notícia - está tudo ok."
+                : "Tente outro filtro ou atualize a página."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <ul className="list-reset">
+              {pedidosPaginados.map((pedido) => (
+                <li key={pedido.id}>
+                  <PedidoCard
+                    pedido={pedido}
+                    onAprovar={
+                      pedido.estado === "pendente" &&
+                      pedido.tipo_pedido === "renovação"
+                        ? () => openConfirmModal("aprovar", pedido.id)
+                        : undefined
+                    }
+                    onRejeitar={
+                      pedido.estado === "pendente"
+                        ? () => openConfirmModal("rejeitar", pedido.id)
+                        : undefined
+                    }
+                    loading={false}
+                  />
+                </li>
+              ))}
+            </ul>
+
+            {/* Paginação */}
+            {renderPagination()}
+
+            {/* Info de paginação */}
+            <div
+              style={{
+                marginTop: "16px",
+                textAlign: "center",
+                fontSize: "0.875rem",
+                color: "var(--muted)",
+              }}
+            >
+              A mostrar {startIndex + 1}-
+              {Math.min(endIndex, pedidosFiltrados.length)} de{" "}
+              {pedidosFiltrados.length} pedidos
+            </div>
+          </>
+        )}
+
+        {/* Modal de confirmação */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={closeConfirmModal}
+          onConfirm={handleConfirmAction}
+          title={
+            confirmModal.action === "aprovar"
+              ? "Aprovar pedido de renovação?"
+              : "Rejeitar pedido?"
+          }
+          message={
+            confirmModal.action === "aprovar"
+              ? `Tem a certeza que deseja aprovar o pedido de renovação de ${
+                  confirmModal.pedido?.cliente_nome || "este cliente"
+                }? A data de expiração será estendida por +30 dias.`
+              : `Tem a certeza que deseja rejeitar o pedido de ${
+                  confirmModal.pedido?.cliente_nome || "este cliente"
+                }?`
+          }
+          confirmText={
+            confirmModal.action === "aprovar" ? "Aprovar" : "Rejeitar"
+          }
+          confirmColor={confirmModal.action === "aprovar" ? "green" : "red"}
+          loading={actionLoading}
+        />
       </div>
 
-      {/* Tabs */}
-      {renderTabs()}
-
-      {/* Lista de pedidos */}
-      {pedidosPaginados.length === 0 ? (
-        <div className="empty-state" style={{ 
-          textAlign: "center", 
-          padding: "4rem 2rem" 
-        }}>
-          <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>
-            {activeTab === "pendentes" ? "🎉" : "📭"}
-          </div>
-          <h3 style={{ 
-            fontSize: "1.25rem", 
-            fontWeight: "700", 
-            marginBottom: "0.5rem",
-            color: "var(--text)"
-          }}>
-            {activeTab === "pendentes"
-              ? "Nenhum pedido pendente!"
-              : "Nenhum pedido encontrado"}
-          </h3>
-          <p style={{ color: "var(--muted)" }}>
-            {activeTab === "pendentes"
-              ? "Boa notícia - está tudo ok."
-              : "Tente outro filtro ou atualize a página."}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="list-stack">
-            {pedidosPaginados.map((pedido) => (
-              <PedidoCard
-                key={pedido.id}
-                pedido={pedido}
-                onAprovar={
-                  pedido.estado === "pendente" &&
-                  pedido.tipo_pedido === "renovação"
-                    ? () => openConfirmModal("aprovar", pedido.id)
-                    : undefined
-                }
-                onRejeitar={
-                  pedido.estado === "pendente"
-                    ? () => openConfirmModal("rejeitar", pedido.id)
-                    : undefined
-                }
-                loading={false}
-              />
-            ))}
-          </div>
-
-          {/* Paginação */}
-          {renderPagination()}
-
-          {/* Info */}
-          <div style={{ 
-            marginTop: "1.5rem", 
-            textAlign: "center", 
-            fontSize: "0.875rem",
-            color: "var(--muted)"
-          }}>
-            A mostrar {startIndex + 1}-{Math.min(endIndex, pedidosFiltrados.length)} de{" "}
-            {pedidosFiltrados.length} pedidos
-          </div>
-        </>
-      )}
-
-      {/* Modal de confirmação */}
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={closeConfirmModal}
-        onConfirm={handleConfirmAction}
-        title={
-          confirmModal.action === "aprovar"
-            ? "Aprovar pedido de renovação?"
-            : "Rejeitar pedido?"
+      {/* CSS da animação de pulse */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
-        message={
-          confirmModal.action === "aprovar"
-            ? `Tem a certeza que deseja aprovar o pedido de renovação de ${
-                confirmModal.pedido?.cliente_nome || "este cliente"
-              }? A data de expiração será estendida por +30 dias.`
-            : `Tem a certeza que deseja rejeitar o pedido de ${
-                confirmModal.pedido?.cliente_nome || "este cliente"
-              }?`
-        }
-        confirmText={
-          confirmModal.action === "aprovar" ? "Aprovar" : "Rejeitar"
-        }
-        confirmColor={confirmModal.action === "aprovar" ? "green" : "red"}
-        loading={actionLoading}
-      />
+      `}</style>
     </div>
   );
 }

@@ -25,7 +25,6 @@ class DemoBase(BaseModel):
     horizontal: Optional[str] = None
     keywords: Optional[str] = None
     codigo_projeto: Optional[str] = None
-    imagem_docker: str
     comercial_nome: Optional[str] = None
     comercial_contacto: Optional[str] = None
     comercial_foto_url: Optional[str] = None
@@ -45,7 +44,6 @@ class DemoUpdate(BaseModel):
     horizontal: Optional[str] = None
     keywords: Optional[str] = None
     codigo_projeto: Optional[str] = None
-    imagem_docker: Optional[str] = None
     comercial_nome: Optional[str] = None
     comercial_contacto: Optional[str] = None
     comercial_foto_url: Optional[str] = None
@@ -114,9 +112,9 @@ def create_demo(demo: DemoCreate):
     
     query = """
         INSERT INTO demo (id, nome, descricao, url, estado, vertical, horizontal, 
-                         keywords, codigo_projeto, imagem_docker, comercial_nome, 
+                         keywords, codigo_projeto, comercial_nome, 
                          comercial_contacto, comercial_foto_url, criado_por)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     
     try:
@@ -124,7 +122,7 @@ def create_demo(demo: DemoCreate):
             query,
             (demo_id, demo.nome, demo.descricao, demo.url, demo.estado,
              demo.vertical, demo.horizontal, demo.keywords, demo.codigo_projeto,
-             demo.imagem_docker, demo.comercial_nome, demo.comercial_contacto,
+             demo.comercial_nome, demo.comercial_contacto,
              demo.comercial_foto_url, demo.criado_por)
         )
     except Exception as e:
@@ -187,11 +185,7 @@ def update_demo(demo_id: str, demo: DemoUpdate):
     if demo.codigo_projeto is not None:
         updates.append("codigo_projeto = ?")
         params.append(demo.codigo_projeto)
-    
-    if demo.imagem_docker is not None:
-        updates.append("imagem_docker = ?")
-        params.append(demo.imagem_docker)
-    
+        
     if demo.comercial_nome is not None:
         updates.append("comercial_nome = ?")
         params.append(demo.comercial_nome)

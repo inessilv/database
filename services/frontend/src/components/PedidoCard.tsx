@@ -1,3 +1,10 @@
+/**
+ * PedidoCard Component (Refactored)
+ * 
+ * Card para exibir pedidos de renovação/revogação
+ * Styling alinhado com demo-card
+ */
+
 import type { PedidoComCliente } from "../types/Pedido";
 
 interface PedidoCardProps {
@@ -17,25 +24,50 @@ export default function PedidoCard({
    * Badge de estado com cores
    */
   const getEstadoBadge = () => {
-    const badges = {
-      pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      aprovado: "bg-green-100 text-green-800 border-green-300",
-      rejeitado: "bg-red-100 text-red-800 border-red-300",
+    const config = {
+      pendente: {
+        label: "🟡 Pendente",
+        style: {
+          backgroundColor: "#fde68a",
+          borderColor: "#f59e0b",
+          color: "#1f2937",
+        },
+      },
+      aprovado: {
+        label: "🟢 Aprovado",
+        style: {
+          backgroundColor: "#bbf7d0",
+          borderColor: "#10b981",
+          color: "#064e3b",
+        },
+      },
+      rejeitado: {
+        label: "🔴 Rejeitado",
+        style: {
+          backgroundColor: "#fecaca",
+          borderColor: "#ef4444",
+          color: "#7f1d1d",
+        },
+      },
     };
 
-    const labels = {
-      pendente: "🟡 Pendente",
-      aprovado: "🟢 Aprovado",
-      rejeitado: "🔴 Rejeitado",
-    };
+    const { label, style } = config[pedido.estado];
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-          badges[pedido.estado]
-        }`}
+        style={{
+          ...style,
+          display: "inline-block",
+          padding: "4px 10px",
+          borderRadius: "999px",
+          fontSize: "0.78rem",
+          fontWeight: "700",
+          textTransform: "uppercase",
+          letterSpacing: "0.4px",
+          border: "1px solid",
+        }}
       >
-        {labels[pedido.estado]}
+        {label}
       </span>
     );
   };
@@ -48,152 +80,180 @@ export default function PedidoCard({
 
     return (
       <span
-        className={`px-2 py-1 rounded text-xs font-medium ${
-          isRenovacao
-            ? "bg-blue-100 text-blue-800"
-            : "bg-gray-100 text-gray-800"
-        }`}
+        style={{
+          display: "inline-block",
+          padding: "4px 10px",
+          borderRadius: "8px",
+          fontSize: "0.75rem",
+          fontWeight: "600",
+          backgroundColor: isRenovacao ? "#dbeafe" : "#f3f4f6",
+          color: isRenovacao ? "#1e40af" : "#374151",
+        }}
       >
         {isRenovacao ? "📅 Renovação" : "🚫 Revogação"}
       </span>
     );
   };
 
- /**
- * Formatar data
- */
-const formatDate = (dateString: string | null | undefined) => {
-  // Validar se a data existe e não é vazia
-  if (!dateString) {
-    console.log("A data é "+dateString);
-    return "Data não definida";
-  }
+  /**
+   * Formatar data
+   */
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) {
+      return "Data não definida";
+    }
 
-  const date = new Date(dateString);
-  
-  // Verificar se a data é válida
-  if (isNaN(date.getTime())) {
-    return "Data inválida";
-  }
+    const date = new Date(dateString);
+    
+    if (isNaN(date.getTime())) {
+      return "Data inválida";
+    }
 
-  return date.toLocaleDateString("pt-PT", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
+    return date.toLocaleDateString("pt-PT", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
-/**
- * Calcular dias até expiração
- */
-const getDiasRestantes = () => {
-  // Validar se a data de expiração existe
-  if (!pedido.data_expiracao_atual) {
-    return null;
-  }
+  /**
+   * Calcular dias até expiração
+   */
+  const getDiasRestantes = () => {
+    if (!pedido.data_expiracao_atual) {
+      return null;
+    }
 
-  const hoje = new Date();
-  const expiracao = new Date(pedido.data_expiracao_atual);
-  
-  // Verificar se a data de expiração é válida
-  if (isNaN(expiracao.getTime())) {
-    return null;
-  }
+    const hoje = new Date();
+    const expiracao = new Date(pedido.data_expiracao_atual);
+    
+    if (isNaN(expiracao.getTime())) {
+      return null;
+    }
 
-  const diff = expiracao.getTime() - hoje.getTime();
-  const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  return dias;
-};
+    const diff = expiracao.getTime() - hoje.getTime();
+    const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return dias;
+  };
 
-const diasRestantes = getDiasRestantes();
-const expirado = diasRestantes !== null && diasRestantes < 0;
-const expirandoBreve = diasRestantes !== null && diasRestantes > 0 && diasRestantes <= 7;
+  const diasRestantes = getDiasRestantes();
+  const expirado = diasRestantes !== null && diasRestantes < 0;
+  const expirandoBreve = diasRestantes !== null && diasRestantes > 0 && diasRestantes <= 7;
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 p-6">
-      {/* Header com badges */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          {getEstadoBadge()}
-          {getTipoBadge()}
+    <div className="demo-card">
+      {/* Header com badges e data */}
+      <div style={{ marginBottom: "16px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "12px",
+          }}
+        >
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {getEstadoBadge()}
+            {getTipoBadge()}
+          </div>
+          <span
+            style={{
+              fontSize: "0.75rem",
+              color: "var(--muted)",
+            }}
+          >
+            {formatDate(pedido.criado_em)}
+          </span>
         </div>
-        <span className="text-xs text-gray-500">
-          <p>Criado em:</p>
-          {formatDate(pedido.criado_em)}
-        </span>
-      </div>
 
-      {/* Informações do cliente */}
-      <div className="mb-4">
-        <h3 className="text-lg font-bold text-gray-900 mb-1">
+        {/* Nome e Email do cliente */}
+        <h3 className="demo-title" style={{ marginBottom: "4px" }}>
           {pedido.cliente_nome}
         </h3>
-        <p className="text-sm text-gray-600">{pedido.cliente_email}</p>
+        <div className="demo-meta">
+          <div>
+            <span className="muted">Email:</span>{" "}
+            <strong>{pedido.cliente_email}</strong>
+          </div>
+        </div>
       </div>
 
       {/* Data de expiração atual */}
-      <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-xs text-gray-500 mb-1">Data de expiração atual:</p>
+      <div
+        style={{
+          padding: "12px",
+          backgroundColor: "var(--bg)",
+          borderRadius: "8px",
+          border: "1px solid var(--stroke)",
+          marginBottom: "16px",
+        }}
+      >
         <p
-          className={`text-sm font-semibold ${
-            expirado
-              ? "text-red-600"
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--muted)",
+            marginBottom: "4px",
+          }}
+        >
+          Data de expiração atual:
+        </p>
+        <p
+          style={{
+            fontSize: "0.875rem",
+            fontWeight: "600",
+            color: expirado
+              ? "#ef4444"
               : expirandoBreve
-              ? "text-orange-600"
-              : "text-gray-900"
-          }`}
+              ? "#f59e0b"
+              : "var(--text)",
+          }}
         >
           {formatDate(pedido.data_expiracao_atual)}
-          {expirado && " (Expirado)"}
-          {expirandoBreve && ` (${diasRestantes} dias restantes)`}
+          {diasRestantes !== null && (
+            <span
+              style={{
+                marginLeft: "8px",
+                fontSize: "0.75rem",
+                fontWeight: "500",
+              }}
+            >
+              {expirado
+                ? `(expirado há ${Math.abs(diasRestantes)} dias)`
+                : `(${diasRestantes} dias restantes)`}
+            </span>
+          )}
         </p>
       </div>
 
-      {/* Informações adicionais */}
-      {pedido.gerido_por && (
-        <div className="mb-4 text-xs text-gray-500">
-          <p>
-            Processado por: Admin ID {pedido.gerido_por}
-          </p>
-        </div>
-      )}
-
-      {/* Ações (apenas se pendente) */}
-      {pedido.estado === "pendente" && onAprovar && onRejeitar && (
-        <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-          <button
-            onClick={() => onAprovar(pedido.id)}
-            disabled={loading}
-            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                A processar...
-              </>
-            ) : (
-              <>
-                ✅ Aprovar (+30 dias)
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={() => onRejeitar(pedido.id)}
-            disabled={loading}
-            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            ❌ Rejeitar
-          </button>
-        </div>
-      )}
-
-      {/* Mensagem se não for renovação */}
-      {pedido.tipo_pedido === "revogação" && pedido.estado === "pendente" && (
-        <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-          <p className="text-xs text-orange-800">
-            ⚠️ Pedidos de revogação devem ser tratados manualmente.
-          </p>
+      {/* Ações */}
+      {pedido.estado === "pendente" && (onAprovar || onRejeitar) && (
+        <div className="card-actions">
+          {onRejeitar && (
+            <button
+              onClick={() => onRejeitar(pedido.id)}
+              disabled={loading}
+              className="danger"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+              }}
+            >
+              ✖ Rejeitar
+            </button>
+          )}
+          {onAprovar && (
+            <button
+              onClick={() => onAprovar(pedido.id)}
+              disabled={loading}
+              className="button"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+              }}
+            >
+              ✓ Aprovar (+30 dias)
+            </button>
+          )}
         </div>
       )}
     </div>

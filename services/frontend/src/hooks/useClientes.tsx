@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import type { Cliente, ClienteCreate, ClienteUpdate, ClienteComStatus } from "../types/Cliente";
+import type { Cliente, ClienteCreate, ClienteUpdate, ClienteComStatus } from "../types/Cliente.ts";
 import {clienteService} from "../services/clienteService.ts";
 
 export function useClientes() {

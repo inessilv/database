@@ -14,7 +14,6 @@ class DemoBase(BaseModel):
     horizontal: Optional[str] = Field(None, max_length=50)
     keywords: Optional[str] = None
     codigo_projeto: Optional[str] = Field(None, max_length=6)
-    imagem_docker: str = Field(..., description="Nome da imagem Docker")
     url: Optional[str] = None
     comercial_nome: Optional[str] = Field(None, max_length=100)
     comercial_contacto: Optional[str] = Field(None, max_length=20)
@@ -35,7 +34,6 @@ class DemoUpdate(BaseModel):
     horizontal: Optional[str] = Field(None, max_length=50)
     keywords: Optional[str] = None
     codigo_projeto: Optional[str] = Field(None, max_length=6)
-    imagem_docker: Optional[str] = None
     url: Optional[str] = None
     estado: Optional[str] = Field(None, pattern="^(ativa|inativa|manutenção)$")
     comercial_nome: Optional[str] = Field(None, max_length=100)
