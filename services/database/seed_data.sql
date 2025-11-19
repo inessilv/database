@@ -25,7 +25,7 @@ INSERT INTO admin (id, nome, email, password_hash, contacto) VALUES
 -- DEMOS
 -- ============================================================================
 
-INSERT INTO demo (id, nome, descrição, vertical, horizontal, keywords, codigo_projeto, comercial_nome, comercial_contacto, 
+INSERT INTO demo (id, nome, descricao, vertical, horizontal, keywords, codigo_projeto, comercial_nome, comercial_contacto, 
                   comercial_foto_url, url, estado, criado_por) VALUES
     ('demo001', 
      'Solução CRM Cloud', 

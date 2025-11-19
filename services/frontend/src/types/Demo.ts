@@ -26,7 +26,7 @@ export interface Demo {
 }
 
 /**
- * Demo Create (POST /api/demos/)
+ * Demo Create (POST /api/demos/create)
  */
 export interface DemoCreate {
   nome: string;
@@ -44,7 +44,7 @@ export interface DemoCreate {
 }
 
 /**
- * Demo Update (PUT /api/demos/{id})
+ * Demo Update (PUT /api/demos/{id}/update)
  * Todos os campos são opcionais (partial update)
  */
 export interface DemoUpdate {

@@ -20,6 +20,7 @@ const PLACEHOLDER = "/placeholder-user.png";
 
 /**
  * Componente de Avatar do Comercial
+ * Suporta URLs HTTPS/HTTP e Base64
  */
 function ComercialAvatar({
   src,
@@ -31,18 +32,33 @@ function ComercialAvatar({
   size?: number;
 }) {
   const [imageUrl, setImageUrl] = useState<string>(PLACEHOLDER);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
+    setImageError(false);
     const v = (src ?? "").trim();
-    if (v && /^https?:\/\//i.test(v)) {
+    
+    // Se não há foto, usa placeholder
+    if (!v) {
+      setImageUrl(PLACEHOLDER);
+      return;
+    }
+
+    // Aceita URLs HTTPS/HTTP ou Base64
+    if (/^https?:\/\//i.test(v) || /^data:image\//i.test(v)) {
       setImageUrl(v);
     } else {
+      // Qualquer outro formato inválido, usa placeholder
       setImageUrl(PLACEHOLDER);
     }
   }, [src]);
 
   const handleError = () => {
-    setImageUrl(PLACEHOLDER);
+    // Só usa placeholder se houver erro ao carregar a imagem
+    if (!imageError) {
+      setImageError(true);
+      setImageUrl(PLACEHOLDER);
+    }
   };
 
   return (
@@ -122,43 +138,42 @@ function DetailField({
         gridColumn: fullWidth ? "1 / -1" : "auto",
       }}
     >
-      <label
+      <div
         style={{
-          display: "block",
-          fontSize: "0.75rem",
+          fontSize: "0.875rem",
           fontWeight: "600",
           color: "var(--muted)",
           marginBottom: "6px",
           textTransform: "uppercase",
-          letterSpacing: "0.05em",
+          letterSpacing: "0.5px",
         }}
       >
         {label}
-      </label>
-      <p
+      </div>
+      <div
         style={{
-          fontSize: "0.9375rem",
+          fontSize: "1rem",
           color: "var(--text)",
-          margin: 0,
           wordBreak: "break-word",
         }}
       >
         {value || "—"}
-      </p>
+      </div>
     </div>
   );
 }
 
 /**
- * Formatar data
+ * Formatar data ISO para pt-PT
  */
-function formatDate(isoDate: string): string {
+function formatDate(isoDate: string | null | undefined): string {
+  if (!isoDate) return "—";
   try {
-    const date = new Date(isoDate);
-    return date.toLocaleString("pt-PT", {
-      day: "2-digit",
-      month: "2-digit",
+    const d = new Date(isoDate);
+    return d.toLocaleString("pt-PT", {
       year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -168,20 +183,19 @@ function formatDate(isoDate: string): string {
 }
 
 /**
- * Normalizar URL
+ * Normalizar URL (adicionar https:// se necessário)
  */
-function normalizeUrl(raw?: string | null): string | null {
-  if (!raw) return null;
-  const s = raw.trim();
-  try {
-    const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
-    const u = new URL(withProto);
-    return u.toString();
-  } catch {
-    return null;
-  }
+function normalizeUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 }
 
+/**
+ * Componente principal
+ */
 export default function Detalhe({ user }: Props) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -196,7 +210,7 @@ export default function Detalhe({ user }: Props) {
    */
   useEffect(() => {
     if (!id) {
-      setError("ID da demo não fornecido");
+      setError("ID da demo não fornecido.");
       setLoading(false);
       return;
     }
@@ -204,13 +218,11 @@ export default function Detalhe({ user }: Props) {
     const loadDemo = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const data = await demoService.getById(id);
         setDemo(data);
       } catch (err: any) {
-        console.error("Erro ao carregar demo:", err);
-        setError(err.message || "Erro ao carregar demo");
+        setError(err.message || "Erro ao carregar demo.");
       } finally {
         setLoading(false);
       }
@@ -220,11 +232,13 @@ export default function Detalhe({ user }: Props) {
   }, [id]);
 
   /**
-   * Abrir demo em nova aba
+   * Abrir URL da demo
    */
   const handleOpenDemo = () => {
-    if (!demo?.url) {
-      alert("Esta demo não tem um URL configurado.");
+    if (!demo) return;
+
+    if (!demo.url) {
+      alert("Esta demo não tem URL configurado.");
       return;
     }
 
@@ -314,141 +328,61 @@ export default function Detalhe({ user }: Props) {
           <p style={{ color: "var(--muted)", marginBottom: "24px" }}>
             {error || "A demo solicitada não existe ou foi removida."}
           </p>
-          <button
-            className="btn-primary"
-            onClick={() => navigate("/demos")}
-            style={{ padding: "12px 24px" }}
-          >
-            Voltar ao Catálogo
+          <button className="btn-primary" onClick={() => navigate("/demos")}>
+            <i className="bi bi-arrow-left" />
+            <span>Voltar às Demos</span>
           </button>
         </div>
       </div>
     );
   }
 
+  /**
+   * Success state
+   */
   return (
-    <div className="page-container">
-      {/* Botão Voltar */}
-      <button className="btn-back-outline" onClick={() => navigate("/demos")}>
-        <i className="bi bi-arrow-left" />
-        <span>Voltar</span>
-      </button>
-
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginTop: "24px",
-          marginBottom: "24px",
-          gap: "16px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "8px",
-            }}
-          >
-            <h1
-              style={{
-                fontSize: "2rem",
-                fontWeight: "700",
-                margin: 0,
-                color: "var(--text)",
-              }}
-            >
+    <div className="page">
+      <div className="page-max">
+        {/* Header com ações */}
+        <div className="list-header" style={{ marginBottom: "24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button className="btn-back-outline" onClick={() => navigate("/demos")}>
+              <i className="bi bi-arrow-left" />
+              <span>Voltar</span>
+            </button>
+            <h1 className="page-title" style={{ margin: 0 }}>
               {demo.nome}
             </h1>
             <EstadoBadge estado={demo.estado} />
           </div>
-          {demo.codigo_projeto && (
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: "var(--muted)",
-                margin: 0,
-              }}
-            >
-              Código do Projeto: <strong>{demo.codigo_projeto}</strong>
-            </p>
-          )}
+
+          <div style={{ display: "flex", gap: "12px" }}>
+            {demo.url && (
+              <button className="btn-outline" onClick={handleOpenDemo}>
+                <i className="bi bi-box-arrow-up-right" />
+                <span>Abrir Demo</span>
+              </button>
+            )}
+            {isAdmin && (
+              <>
+                <button
+                  className="btn-outline"
+                  onClick={() => navigate(`/demos/${demo.id}/editar`)}
+                >
+                  <i className="bi bi-pencil" />
+                  <span>Editar</span>
+                </button>
+                <button className="btn-danger" onClick={handleDelete}>
+                  <i className="bi bi-trash" />
+                  <span>Apagar</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Ações */}
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          {demo.url && (
-            <button
-              className="btn-primary"
-              onClick={handleOpenDemo}
-              style={{
-                padding: "12px 20px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <i className="bi bi-box-arrow-up-right" />
-              Abrir Demo
-            </button>
-          )}
-
-          {isAdmin && (
-            <>
-              <button
-                className="btn-secondary"
-                onClick={() => navigate(`/demos/${demo.id}/edit`)}
-                style={{
-                  padding: "12px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <i className="bi bi-pencil" />
-                Editar
-              </button>
-
-              <button
-                onClick={handleDelete}
-                style={{
-                  padding: "12px 20px",
-                  background: "transparent",
-                  border: "2px solid #dc2626",
-                  borderRadius: "8px",
-                  color: "#dc2626",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#dc2626";
-                  e.currentTarget.style.color = "white";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#dc2626";
-                }}
-              >
-                <i className="bi bi-trash" />
-                Apagar
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Conteúdo */}
-      <div className="card">
-        <div className="card-body">
+        {/* Card principal com detalhes */}
+        <div className="card" style={{ padding: "32px" }}>
           {/* Seção: Informação Geral */}
           <section style={{ marginBottom: "32px" }}>
             <h2
@@ -504,7 +438,7 @@ export default function Detalhe({ user }: Props) {
                 flexWrap: "wrap",
               }}
             >
-              {/* Foto do Comercial */}
+              {/* Foto do Comercial - AGORA MOSTRA FOTO REAL */}
               <ComercialAvatar
                 src={demo.comercial_foto_url}
                 alt={demo.comercial_nome || "Comercial"}
@@ -523,11 +457,6 @@ export default function Detalhe({ user }: Props) {
               >
                 <DetailField label="Nome" value={demo.comercial_nome} />
                 <DetailField label="Contacto" value={demo.comercial_contacto} />
-                <DetailField
-                  label="URL da Foto"
-                  value={demo.comercial_foto_url}
-                  fullWidth
-                />
               </div>
             </div>
           </section>
@@ -554,7 +483,7 @@ export default function Detalhe({ user }: Props) {
                 gap: "20px",
               }}
             >
-              <DetailField label="Delete DemoCriado Por" value={demo.criado_por} />
+              <DetailField label="Criado Por" value={demo.criado_por} />
               <DetailField label="Data de Criação" value={formatDate(demo.criado_em)} />
               <DetailField
                 label="Última Atualização"

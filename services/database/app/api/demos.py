@@ -1,13 +1,8 @@
-"""
-Demo CRUD Endpoints
-Tabela: demo (id, estado, url, nome, descrição, vertical, horizontal, keywords, 
-              codigo_projeto, imagem_docker, comercial_nome, comercial_contacto, 
-              comercial_foto_url, criado_por, criado_em, atualizado_em)
-"""
 from fastapi import APIRouter, HTTPException, status
 from typing import List, Optional, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from app.db.connection import DatabaseConnection as db
+import re
 
 
 router = APIRouter()
@@ -26,13 +21,27 @@ class DemoBase(BaseModel):
     keywords: Optional[str] = None
     codigo_projeto: Optional[str] = None
     comercial_nome: Optional[str] = None
-    comercial_contacto: Optional[str] = None
-    comercial_foto_url: Optional[str] = None
+    comercial_contacto: Optional[str] = None  
+    comercial_foto_url: Optional[str] = None  # Pode ser Base64
 
 
 class DemoCreate(DemoBase):
     estado: Literal['ativa', 'inativa', 'manutenção'] = 'ativa'
     criado_por: str  # admin_id
+    
+    @field_validator('codigo_projeto')
+    @classmethod
+    def validate_codigo_projeto(cls, v):
+        if v and len(v) != 6:
+            raise ValueError('Código do projeto deve ter exatamente 6 caracteres')
+        return v.upper() if v else v
+    
+    @field_validator('url')
+    @classmethod
+    def validate_url(cls, v):
+        if v and not re.match(r'^https?://', v):
+            raise ValueError('URL deve começar com http:// ou https://')
+        return v
 
 
 class DemoUpdate(BaseModel):
@@ -47,6 +56,20 @@ class DemoUpdate(BaseModel):
     comercial_nome: Optional[str] = None
     comercial_contacto: Optional[str] = None
     comercial_foto_url: Optional[str] = None
+    
+    @field_validator('codigo_projeto')
+    @classmethod
+    def validate_codigo_projeto(cls, v):
+        if v and len(v) != 6:
+            raise ValueError('Código do projeto deve ter exatamente 6 caracteres')
+        return v.upper() if v else v
+    
+    @field_validator('url')
+    @classmethod
+    def validate_url(cls, v):
+        if v and not re.match(r'^https?://', v):
+            raise ValueError('URL deve começar com http:// ou https://')
+        return v
 
 
 class DemoResponse(DemoBase):
@@ -64,7 +87,7 @@ class DemoResponse(DemoBase):
 @router.get("/all", response_model=List[DemoResponse])
 def get_all_demos():
     """Listar todas as demos"""
-    query = "SELECT * FROM demo ORDER BY criado_em DESC"
+    query = "SELECT * FROM demo ORDER BY nome ASC"
     return db.execute_query(query)
 
 
@@ -104,9 +127,9 @@ def get_demo(demo_id: str):
     return demos[0]
 
 
-@router.post("/", response_model=DemoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=DemoResponse, status_code=status.HTTP_201_CREATED)
 def create_demo(demo: DemoCreate):
-    """Criar nova demo"""
+ 
     import secrets
     demo_id = secrets.token_hex(16)
     
@@ -139,9 +162,9 @@ def create_demo(demo: DemoCreate):
     return get_demo(demo_id)
 
 
-@router.put("/{demo_id}", response_model=DemoResponse)
+@router.put("/{demo_id}/update", response_model=DemoResponse)
 def update_demo(demo_id: str, demo: DemoUpdate):
-    """Atualizar demo"""
+   
     # Verificar se existe
     existing = db.execute_query("SELECT id FROM demo WHERE id = ?", (demo_id,))
     if not existing:
@@ -185,7 +208,7 @@ def update_demo(demo_id: str, demo: DemoUpdate):
     if demo.codigo_projeto is not None:
         updates.append("codigo_projeto = ?")
         params.append(demo.codigo_projeto)
-        
+    
     if demo.comercial_nome is not None:
         updates.append("comercial_nome = ?")
         params.append(demo.comercial_nome)
@@ -221,7 +244,7 @@ def update_demo(demo_id: str, demo: DemoUpdate):
     return get_demo(demo_id)
 
 
-@router.delete("/{demo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{demo_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 def delete_demo(demo_id: str):
     """Apagar demo"""
     rows_affected = db.execute_update("DELETE FROM demo WHERE id = ?", (demo_id,))

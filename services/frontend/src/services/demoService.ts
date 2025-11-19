@@ -54,7 +54,7 @@ class DemoService {
    * POST /api/demos/
    */
   async create(demo: DemoCreate): Promise<Demo> {
-    return api.post<Demo>("/api/demos/", demo);
+    return api.post<Demo>("/api/demos/create", demo);
   }
 
   /**
@@ -62,7 +62,7 @@ class DemoService {
    * PUT /api/demos/{id}
    */
   async update(id: string, demo: DemoUpdate): Promise<Demo> {
-    return api.put<Demo>(`/api/demos/${id}`, demo);
+    return api.put<Demo>(`/api/demos/${id}/update`, demo);
   }
 
   /**
@@ -70,7 +70,7 @@ class DemoService {
    * DELETE /api/demos/{id}
    */
   async delete(id: string): Promise<void> {
-    return api.delete<void>(`/api/demos/${id}`);
+    return api.delete<void>(`/api/demos/${id}/delete`);
   }
 
   /**

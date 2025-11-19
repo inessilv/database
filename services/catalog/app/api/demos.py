@@ -90,7 +90,7 @@ async def get_demo(demo_id: str):
         )
 
 
-@router.post("/", response_model=DemoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=DemoResponse, status_code=status.HTTP_201_CREATED)
 async def create_demo(demo: DemoCreate):
     """
     Criar nova demo
@@ -109,7 +109,7 @@ async def create_demo(demo: DemoCreate):
         )
 
 
-@router.put("/{demo_id}", response_model=DemoResponse)
+@router.put("/{demo_id}/update", response_model=DemoResponse)
 async def update_demo(demo_id: str, demo: DemoUpdate):
     """
     Atualizar demo
@@ -133,7 +133,7 @@ async def update_demo(demo_id: str, demo: DemoUpdate):
         )
 
 
-@router.delete("/{demo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{demo_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_demo(demo_id: str):
     """
     Apagar demo

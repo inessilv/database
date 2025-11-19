@@ -122,16 +122,16 @@ class DatabaseClient:
         return await self._request("GET", f"/db/demos/{demo_id}")
     
     async def create_demo(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """POST /db/demos/"""
-        return await self._request("POST", "/db/demos/", json=data)
+        """POST /db/demos/create"""
+        return await self._request("POST", "/db/demos/create", json=data)
     
     async def update_demo(self, demo_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        """PUT /db/demos/{id}"""
-        return await self._request("PUT", f"/db/demos/{demo_id}", json=data)
+        """PUT /db/demos/{id}/update"""
+        return await self._request("PUT", f"/db/demos/{demo_id}/update", json=data)
     
     async def delete_demo(self, demo_id: str) -> None:
-        """DELETE /db/demos/{id}"""
-        await self._request("DELETE", f"/db/demos/{demo_id}")
+        """DELETE /db/demos/{id}/delete"""
+        await self._request("DELETE", f"/db/demos/{demo_id}/delete")
     
     # ========================================================================
     # PEDIDOS

@@ -44,7 +44,7 @@ CREATE TABLE demo (
     estado TEXT DEFAULT 'ativa' CHECK(estado IN ('ativa', 'inativa', 'manutenção')),
     url TEXT NOT NULL,
     nome VARCHAR(100) NOT NULL,
-    descrição TEXT,
+    descricao TEXT,
     vertical VARCHAR(50),     -- Ex: Retail, Manufacturing, Finance
     horizontal VARCHAR(50),   -- Ex: Supply Chain, CRM, Analytics
     keywords TEXT,     -- Comma-separated para pesquisa simples

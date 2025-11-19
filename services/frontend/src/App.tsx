@@ -124,7 +124,7 @@ export default function App() {
 
                 {/* Demos - Criar (só admin) */}
                 <Route
-                    path="/demos/new"
+                    path="/demos/create"
                     element={
                         logged && isAdmin ? (
                             <DemoPage user={user!} />
@@ -148,7 +148,7 @@ export default function App() {
 
                 {/* Demos - Editar (só admin) */}
                 <Route
-                    path="/demos/:id/edit"
+                    path="/demos/:id/update"
                     element={
                         logged && isAdmin ? (
                             <EditDemo user={user!} />

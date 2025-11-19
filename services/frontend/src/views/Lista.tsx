@@ -374,7 +374,7 @@ export default function Lista({ user }: Props) {
         {isAdmin && (
           <button
             className="btn-primary"
-            onClick={() => navigate("/demos/new")}
+            onClick={() => navigate("/demos/create")}
             style={{
               padding: "12px 24px",
               borderRadius: "8px",
@@ -712,7 +712,7 @@ export default function Lista({ user }: Props) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/demos/${demo.id}/edit`);
+                              navigate(`/demos/${demo.id}/update`);
                             }}
                             style={{
                               padding: "8px 12px",
