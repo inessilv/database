@@ -1,10 +1,3 @@
-/**
- * Detalhe View (Refactored)
- * 
- * Vista de detalhes completos de uma demo
- * Layout em grid com todos os campos da BD
- */
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { demoService } from "../services/demoService";
@@ -16,11 +9,15 @@ type Props = {
   user: User;
 };
 
-const PLACEHOLDER = "/placeholder-user.png";
+/**
+ * SVG Placeholder Inline (não precisa de ficheiro externo)
+ */
+const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect fill='%23e5e7eb' width='120' height='120'/%3E%3Cpath fill='%239ca3af' d='M60 55c-8.3 0-15-6.7-15-15s6.7-15 15-15 15 6.7 15 15-6.7 15-15 15zm0 10c10 0 30 5 30 15v10H30V80c0-10 20-15 30-15z'/%3E%3C/svg%3E`;
 
 /**
  * Componente de Avatar do Comercial
  * Suporta URLs HTTPS/HTTP e Base64
+ * CORRIGIDO: Usa SVG inline como fallback
  */
 function ComercialAvatar({
   src,
@@ -31,33 +28,70 @@ function ComercialAvatar({
   alt: string;
   size?: number;
 }) {
-  const [imageUrl, setImageUrl] = useState<string>(PLACEHOLDER);
+  const [imageUrl, setImageUrl] = useState<string>(PLACEHOLDER_SVG);
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     setImageError(false);
     const v = (src ?? "").trim();
     
+    console.log("🖼️ ComercialAvatar Debug");
+    console.log("1. src recebido:", src ? `${src.substring(0, 50)}...` : "null/empty");
+    console.log("2. src length:", v.length);
+    
     // Se não há foto, usa placeholder
     if (!v) {
-      setImageUrl(PLACEHOLDER);
+      console.log("3. Sem foto → usando placeholder SVG");
+      setImageUrl(PLACEHOLDER_SVG);
       return;
     }
 
-    // Aceita URLs HTTPS/HTTP ou Base64
-    if (/^https?:\/\//i.test(v) || /^data:image\//i.test(v)) {
-      setImageUrl(v);
-    } else {
-      // Qualquer outro formato inválido, usa placeholder
-      setImageUrl(PLACEHOLDER);
+    // Validar Base64
+    if (v.startsWith("data:image/")) {
+      console.log("3. Formato: Base64 detectado");
+      
+      // Extrair tipo de imagem (jpeg, png, etc)
+      const match = v.match(/^data:image\/(\w+);base64,/);
+      if (match) {
+        const imageType = match[1];
+        console.log("4. Tipo de imagem:", imageType);
+        
+        // Validar que tem conteúdo Base64
+        const base64Content = v.split(",")[1];
+        if (base64Content && base64Content.length > 0) {
+          console.log("5. Base64 válido, usando imagem");
+          setImageUrl(v);
+        } else {
+          console.log("5. ❌ Base64 inválido (sem conteúdo)");
+          setImageUrl(PLACEHOLDER_SVG);
+        }
+      } else {
+        console.log("4. ❌ Formato Base64 inválido");
+        setImageUrl(PLACEHOLDER_SVG);
+      }
+      return;
     }
+
+    // Aceita URLs HTTPS/HTTP
+    if (/^https?:\/\//i.test(v)) {
+      console.log("3. Formato: URL HTTP/HTTPS");
+      console.log("4. URL:", v);
+      setImageUrl(v);
+      return;
+    }
+
+    // Qualquer outro formato inválido, usa placeholder
+    console.log("3. ❌ Formato desconhecido, usando placeholder");
+    setImageUrl(PLACEHOLDER_SVG);
   }, [src]);
 
   const handleError = () => {
     // Só usa placeholder se houver erro ao carregar a imagem
     if (!imageError) {
+      console.error("❌ Erro ao carregar imagem!");
+      console.error("URL que falhou:", imageUrl);
       setImageError(true);
-      setImageUrl(PLACEHOLDER);
+      setImageUrl(PLACEHOLDER_SVG);
     }
   };
 
@@ -72,7 +106,7 @@ function ComercialAvatar({
         objectFit: "cover",
         borderRadius: "12px",
         border: "2px solid var(--stroke)",
-        backgroundColor: "#d8dadf",
+        backgroundColor: "#e5e7eb",
         display: "block",
         flexShrink: 0,
       }}
@@ -140,7 +174,7 @@ function DetailField({
     >
       <div
         style={{
-          fontSize: "0.875rem",
+          fontSize: "0.75rem",
           fontWeight: "600",
           color: "var(--muted)",
           marginBottom: "6px",
@@ -152,7 +186,7 @@ function DetailField({
       </div>
       <div
         style={{
-          fontSize: "1rem",
+          fontSize: "0.95rem",
           color: "var(--text)",
           wordBreak: "break-word",
         }}
@@ -164,100 +198,61 @@ function DetailField({
 }
 
 /**
- * Formatar data ISO para pt-PT
+ * Formatar data ISO para formato legível
  */
-function formatDate(isoDate: string | null | undefined): string {
-  if (!isoDate) return "—";
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
   try {
-    const d = new Date(isoDate);
-    return d.toLocaleString("pt-PT", {
-      year: "numeric",
-      month: "2-digit",
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("pt-PT", {
       day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    });
+    }).format(date);
   } catch {
-    return isoDate;
+    return dateStr;
   }
 }
 
-/**
- * Normalizar URL (adicionar https:// se necessário)
- */
-function normalizeUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
-/**
- * Componente principal
- */
 export default function Detalhe({ user }: Props) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [demo, setDemo] = useState<Demo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user.role === "admin";
+  const isAdmin = user?.role === "admin";
 
-  /**
-   * Carregar demo
-   */
   useEffect(() => {
     if (!id) {
-      setError("ID da demo não fornecido.");
-      setLoading(false);
+      navigate("/demos");
       return;
     }
 
     const loadDemo = async () => {
       setLoading(true);
-      setError(null);
       try {
         const data = await demoService.getById(id);
+        console.log("📥 Demo carregada do backend");
+        console.log("comercial_foto_url length:", data.comercial_foto_url?.length || 0);
         setDemo(data);
       } catch (err: any) {
-        setError(err.message || "Erro ao carregar demo.");
+        console.error("Erro ao carregar demo:", err);
+        alert(`Erro ao carregar demo: ${err.message}`);
+        navigate("/demos");
       } finally {
         setLoading(false);
       }
     };
 
     loadDemo();
-  }, [id]);
+  }, [id, navigate]);
 
-  /**
-   * Abrir URL da demo
-   */
-  const handleOpenDemo = () => {
-    if (!demo) return;
-
-    if (!demo.url) {
-      alert("Esta demo não tem URL configurado.");
-      return;
-    }
-
-    const url = normalizeUrl(demo.url);
-    if (!url) {
-      alert("URL da demo inválido.");
-      return;
-    }
-
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  /**
-   * Apagar demo
-   */
   const handleDelete = async () => {
-    if (!demo) return;
+    if (!demo || !isAdmin) return;
 
-    if (!confirm(`Tens a certeza que queres apagar a demo "${demo.nome}"?`)) {
+    if (!confirm(`Tem certeza que deseja apagar a demo "${demo.nome}"?`)) {
       return;
     }
 
@@ -266,125 +261,171 @@ export default function Detalhe({ user }: Props) {
       alert("Demo apagada com sucesso!");
       navigate("/demos");
     } catch (err: any) {
+      console.error("Erro ao apagar demo:", err);
       alert(`Erro ao apagar demo: ${err.message}`);
     }
   };
 
-  /**
-   * Loading state
-   */
+  const handleEdit = () => {
+    if (!demo || !isAdmin) return;
+    navigate(`/demos/${demo.id}/edit`);
+  };
+
+  const handleOpenDemo = () => {
+    if (!demo?.url) return;
+    window.open(demo.url, "_blank");
+  };
+
   if (loading) {
     return (
-      <div className="page-container">
-        <button className="btn-back-outline" onClick={() => navigate("/demos")}>
-          <i className="bi bi-arrow-left" />
-          <span>Voltar</span>
-        </button>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "400px",
-            fontSize: "1.125rem",
-            color: "var(--muted)",
-          }}
-        >
-          A carregar demo...
-        </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+          color: "var(--muted)",
+        }}
+      >
+        Carregando...
       </div>
     );
   }
 
-  /**
-   * Error state
-   */
-  if (error || !demo) {
+  if (!demo) {
     return (
-      <div className="page-container">
-        <button className="btn-back-outline" onClick={() => navigate("/demos")}>
-          <i className="bi bi-arrow-left" />
-          <span>Voltar</span>
-        </button>
-        <div
-          className="card"
-          style={{
-            marginTop: "24px",
-            padding: "48px 24px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "3rem", marginBottom: "16px" }}>⚠️</div>
-          <h2
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+          color: "var(--muted)",
+        }}
+      >
+        Demo não encontrada
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "24px",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          marginBottom: "32px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "16px",
+        }}
+      >
+        <div>
+          <button
+            onClick={() => navigate("/demos")}
             style={{
-              fontSize: "1.5rem",
-              fontWeight: "700",
-              marginBottom: "8px",
-              color: "var(--text)",
+              background: "none",
+              border: "none",
+              color: "var(--primary)",
+              cursor: "pointer",
+              fontSize: "0.875rem",
+              marginBottom: "12px",
+              padding: "0",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
           >
-            Demo não encontrada
-          </h2>
-          <p style={{ color: "var(--muted)", marginBottom: "24px" }}>
-            {error || "A demo solicitada não existe ou foi removida."}
-          </p>
-          <button className="btn-primary" onClick={() => navigate("/demos")}>
-            <i className="bi bi-arrow-left" />
-            <span>Voltar às Demos</span>
+            ← Voltar
           </button>
+          <h1
+            style={{
+              fontSize: "2rem",
+              fontWeight: "700",
+              color: "var(--text)",
+              margin: "0",
+            }}
+          >
+            {demo.nome}
+          </h1>
+        </div>
+
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+          <button
+            onClick={handleOpenDemo}
+            disabled={!demo.url}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "var(--primary)",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "0.875rem",
+              fontWeight: "600",
+              cursor: demo.url ? "pointer" : "not-allowed",
+              opacity: demo.url ? 1 : 0.5,
+            }}
+          >
+            Abrir Demo
+          </button>
+
+          {isAdmin && (
+            <>
+              <button
+                onClick={handleEdit}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "var(--bg)",
+                  color: "var(--text)",
+                  border: "1px solid var(--stroke)",
+                  borderRadius: "8px",
+                  fontSize: "0.875rem",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Editar
+              </button>
+
+              <button
+                onClick={handleDelete}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#fee",
+                  color: "#dc2626",
+                  border: "1px solid #fca5a5",
+                  borderRadius: "8px",
+                  fontSize: "0.875rem",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Apagar
+              </button>
+            </>
+          )}
         </div>
       </div>
-    );
-  }
 
-  /**
-   * Success state
-   */
-  return (
-    <div className="page">
-      <div className="page-max">
-        {/* Header com ações */}
-        <div className="list-header" style={{ marginBottom: "24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <button className="btn-back-outline" onClick={() => navigate("/demos")}>
-              <i className="bi bi-arrow-left" />
-              <span>Voltar</span>
-            </button>
-            <h1 className="page-title" style={{ margin: 0 }}>
-              {demo.nome}
-            </h1>
-            <EstadoBadge estado={demo.estado} />
-          </div>
-
-          <div style={{ display: "flex", gap: "12px" }}>
-            {demo.url && (
-              <button className="btn-outline" onClick={handleOpenDemo}>
-                <i className="bi bi-box-arrow-up-right" />
-                <span>Abrir Demo</span>
-              </button>
-            )}
-            {isAdmin && (
-              <>
-                <button
-                  className="btn-outline"
-                  onClick={() => navigate(`/demos/${demo.id}/editar`)}
-                >
-                  <i className="bi bi-pencil" />
-                  <span>Editar</span>
-                </button>
-                <button className="btn-danger" onClick={handleDelete}>
-                  <i className="bi bi-trash" />
-                  <span>Apagar</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Card principal com detalhes */}
-        <div className="card" style={{ padding: "32px" }}>
+      {/* Content Card */}
+      <div
+        style={{
+          backgroundColor: "var(--card)",
+          borderRadius: "12px",
+          border: "1px solid var(--stroke)",
+          padding: "32px",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
           {/* Seção: Informação Geral */}
-          <section style={{ marginBottom: "32px" }}>
+          <section>
             <h2
               style={{
                 fontSize: "1.25rem",
@@ -409,14 +450,30 @@ export default function Detalhe({ user }: Props) {
               <DetailField label="Código do Projeto" value={demo.codigo_projeto} />
               <DetailField label="Vertical" value={demo.vertical} />
               <DetailField label="Horizontal" value={demo.horizontal} />
-              <DetailField label="URL da Demo" value={demo.url} fullWidth />
+              <DetailField label="URL da Demo" value={demo.url} />
               <DetailField label="Descrição" value={demo.descricao} fullWidth />
               <DetailField label="Keywords" value={demo.keywords} fullWidth />
+
+              <div>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    color: "var(--muted)",
+                    marginBottom: "6px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  Estado
+                </div>
+                <EstadoBadge estado={demo.estado} />
+              </div>
             </div>
           </section>
 
           {/* Seção: Informação do Comercial */}
-          <section style={{ marginBottom: "32px" }}>
+          <section>
             <h2
               style={{
                 fontSize: "1.25rem",
@@ -438,7 +495,7 @@ export default function Detalhe({ user }: Props) {
                 flexWrap: "wrap",
               }}
             >
-              {/* Foto do Comercial - AGORA MOSTRA FOTO REAL */}
+              {/* Foto do Comercial - AGORA COM PLACEHOLDER INLINE */}
               <ComercialAvatar
                 src={demo.comercial_foto_url}
                 alt={demo.comercial_nome || "Comercial"}
@@ -473,7 +530,7 @@ export default function Detalhe({ user }: Props) {
                 paddingBottom: "12px",
               }}
             >
-              📅 Metadados
+              Metadados
             </h2>
 
             <div

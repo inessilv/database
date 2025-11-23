@@ -618,7 +618,7 @@ export default function DemoPage({ user }: Props) {
                     Contacto (Email) *
                   </label>
                   <input
-                    type="email"
+                    type="text"
                     name="comercial_contacto"
                     value={formData.comercial_contacto}
                     onChange={handleChange}

@@ -51,7 +51,7 @@ CREATE TABLE demo (
     codigo_projeto CHAR(6) UNIQUE,
     comercial_nome VARCHAR(100),
     comercial_contacto VARCHAR(20),
-    comercial_foto_url VARCHAR(255),
+    comercial_foto_url TEXT NOT NULL,
     criado_por TEXT NOT NULL,
     criado_em TEXT DEFAULT (datetime('now')),
     atualizado_em TEXT DEFAULT (datetime('now')),

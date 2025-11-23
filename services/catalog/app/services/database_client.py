@@ -13,20 +13,31 @@ class DatabaseClient:
         self.base_url = settings.DATABASE_URL
         self.timeout = settings.HTTP_TIMEOUT
     
+    
     async def _request(self, method: str, endpoint: str, **kwargs) -> Any:
-        """Helper method para fazer requests HTTP"""
+        """
+        Fazer request HTTP ao Database Service
+        """
         url = f"{self.base_url}{endpoint}"
         
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            try:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.request(method, url, **kwargs)
                 response.raise_for_status()
+                
+                if response.status_code == 204:
+                    return None
+                
                 return response.json()
-            except httpx.HTTPStatusError as e:
-                # Re-raise com detalhes do erro
-                raise Exception(f"Database error: {e.response.status_code} - {e.response.text}")
-            except httpx.RequestError as e:
-                raise Exception(f"Connection error to database: {str(e)}")
+        except httpx.HTTPStatusError as e:
+            try:
+                error_detail = e.response.json().get("detail", str(e))
+            except Exception:
+                error_detail = str(e)
+            raise Exception(f"Erro na comunicação com Database Service: {error_detail}")
+        except Exception as e:
+            raise Exception(f"Erro ao comunicar com Database Service: {str(e)}")
+
     
     # ========================================================================
     # ADMIN

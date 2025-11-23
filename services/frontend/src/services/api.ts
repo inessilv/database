@@ -2,6 +2,8 @@
  * Cliente HTTP para comunicação com API Gateway
  * 
  * URL vem da variável de ambiente VITE_API_URL
+ * 
+ * CORREÇÃO: Lida corretamente com 204 No Content (DELETE)
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -31,9 +33,26 @@ class ApiClient {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        // Tentar ler mensagem de erro do body
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          if (errorData.detail) {
+            errorMessage = errorData.detail
+          }
+        } catch {
+          // Se não conseguir ler o JSON, usa mensagem padrão
+        }
+        throw new Error(errorMessage)
       }
 
+      // ✅ CORREÇÃO: 204 No Content não tem body
+      if (response.status === 204) {
+        console.log(`✅ API Response: 204 No Content`)
+        return undefined as T
+      }
+
+      // Para outros status codes, fazer parse do JSON
       const data = await response.json()
       console.log(`✅ API Response:`, data)
       return data
