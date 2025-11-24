@@ -6,4 +6,3 @@ metadata:
 data:
   # URL do API Gateway (service interno Kubernetes)
   VITE_API_URL: "http://api-gateway.ecatalog.svc.cluster.local:8000"
-  frontend-url: "http://localhost:30300"

@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: authentication-config
-  namespace: ecatalog
-data:
-  microsoft-redirect-uri: "http://localhost:30080/api/auth/microsoft/callback"
-  microsoft-tenant-id: "common"
