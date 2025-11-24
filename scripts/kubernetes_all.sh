@@ -61,6 +61,9 @@ cd services/frontend && echo "VITE_API_URL=http://$(minikube ip):30800" > .env &
 echo -e "${GREEN}  ✓ Frontend image built${NC}"
 echo ""
 
+# Store Minikube IP for later use
+MINIKUBE_IP=$(minikube ip)
+
 # ============================================================================
 # 4. Verificar imagens
 # ============================================================================
@@ -73,6 +76,9 @@ echo ""
 # ============================================================================
 echo -e "${YELLOW}☸️  Passo 5/9: Deploy infraestrutura base (namespace, volumes, configs)...${NC}"
 
+# Use Minikube IP stored from build step
+echo -e "${BLUE}Minikube IP: ${MINIKUBE_IP}${NC}"
+
 echo -e "${BLUE}  → Namespace...${NC}"
 kubectl apply -f kubernetes/namespaces/ecatalog-namespace.yaml
 
@@ -80,12 +86,38 @@ echo -e "${BLUE}  → Volumes (PV + PVC)...${NC}"
 kubectl apply -f kubernetes/volumes/database-pv.yaml
 kubectl apply -f kubernetes/volumes/database-pvc.yaml
 
-echo -e "${BLUE}  → ConfigMaps...${NC}"
+echo -e "${BLUE}  → ConfigMaps (with dynamic Minikube IP)...${NC}"
+
+# Create authentication configmap with dynamic Minikube IP
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentication-config
+  namespace: ecatalog
+data:
+  microsoft-redirect-uri: "http://${MINIKUBE_IP}:30080/api/auth/microsoft/callback"
+  microsoft-tenant-id: "common"
+EOF
+
+# Create frontend configmap with dynamic Minikube IP
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: ecatalog
+data:
+  VITE_API_URL: "http://api-gateway.ecatalog.svc.cluster.local:8000"
+  frontend-url: "http://${MINIKUBE_IP}:30300"
+EOF
+
 kubectl apply -f kubernetes/configmaps/catalog-configmap.yaml
 kubectl apply -f kubernetes/configmaps/database-configmap.yaml
 
 echo -e "${BLUE}  → Secrets...${NC}"
 kubectl apply -f kubernetes/secrets/database-secret.yaml
+kubectl apply -f kubernetes/secrets/microsoft-oauth-secret.yaml
 
 echo -e "${GREEN}✓ Infraestrutura base criada${NC}"
 echo ""
@@ -186,6 +218,21 @@ echo -e "${BLUE}📦 Catalog API:    ${NC}http://$MINIKUBE_IP:30800"
 echo -e "${BLUE}📖 Catalog Docs:   ${NC}http://$MINIKUBE_IP:30800/docs"
 echo -e "${BLUE}🔐 Authentication: ${NC}http://$MINIKUBE_IP:30080/docs"
 echo -e "${YELLOW}🗄️  Database:       ${NC}(interno - apenas Catalog tem acesso)"
+echo ""
+
+echo -e "${RED}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${RED}║          ⚠️  MICROSOFT OAUTH CONFIGURATION NEEDED          ║${NC}"
+echo -e "${RED}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}You need to update the Microsoft App redirect URI in Azure Portal:${NC}"
+echo -e "${GREEN}http://$MINIKUBE_IP:30080/api/auth/microsoft/callback${NC}"
+echo ""
+echo -e "${BLUE}Steps:${NC}"
+echo -e "  1. Go to Azure Portal > App Registrations"
+echo -e "  2. Find your app: a6822c5f-f140-4356-8778-5e821789c75e"
+echo -e "  3. Go to Authentication > Redirect URIs"
+echo -e "  4. Add: ${GREEN}http://$MINIKUBE_IP:30080/api/auth/microsoft/callback${NC}"
+echo -e "  5. Save changes"
 echo ""
 
 echo -e "${YELLOW}💡 Comandos úteis:${NC}"

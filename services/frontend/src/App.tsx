@@ -11,6 +11,8 @@ import Notificacoes from "./views/Notificacoes";
 import Clientes from "./views/Clientes";
 import ClienteDetalhe from "./views/ClienteDetalhe.tsx";
 import Analytics from "./views/Analytics";
+import AuthCallback from "./views/AuthCallback";
+
 
 export type Role = "admin" | "viewer";
 export type User = { 
@@ -74,8 +76,19 @@ export default function App() {
         setUser(null);
         localStorage.removeItem("app_user");
     };
+        // Microsoft OAuth callback handler
+    const handleMicrosoftCallback = (token: string, userInfo: any) => {
+        const me: User = {
+            id: userInfo.email || "microsoft-user",
+            name: userInfo.name || userInfo.email,
+            role: userInfo.role || "viewer"
+        };
+        setUser(me);
+        localStorage.setItem("app_user", JSON.stringify(me));
+        localStorage.setItem("auth_token", token);
+    };
 
-    return (
+     return (
         <>
             {logged && (
                 <Navbar
@@ -98,6 +111,12 @@ export default function App() {
                     }
                 />
 
+                {/* Microsoft OAuth Callback */}
+                <Route
+                    path="/auth/callback"
+                    element={<AuthCallback onMicrosoftCallback={handleMicrosoftCallback} />}
+                />
+
                 {/* Root */}
                 <Route
                     path="/"
@@ -109,7 +128,7 @@ export default function App() {
                         )
                     }
                 />
-
+                
                 {/* Demos - Lista (todos podem ver) */}
                 <Route
                     path="/demos"
