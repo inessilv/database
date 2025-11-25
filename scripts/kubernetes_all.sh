@@ -61,6 +61,9 @@ cd services/frontend && echo "VITE_API_URL=http://$(minikube ip):30800" > .env &
 echo -e "${GREEN}  ✓ Frontend image built${NC}"
 echo ""
 
+# Store Minikube IP for later use
+MINIKUBE_IP=$(minikube ip)
+
 # ============================================================================
 # 4. Verificar imagens
 # ============================================================================
@@ -73,6 +76,9 @@ echo ""
 # ============================================================================
 echo -e "${YELLOW}☸️  Passo 5/9: Deploy infraestrutura base (namespace, volumes, configs)...${NC}"
 
+# Use Minikube IP stored from build step
+echo -e "${BLUE}Minikube IP: ${MINIKUBE_IP}${NC}"
+
 echo -e "${BLUE}  → Namespace...${NC}"
 kubectl apply -f kubernetes/namespaces/ecatalog-namespace.yaml
 
@@ -81,11 +87,14 @@ kubectl apply -f kubernetes/volumes/database-pv.yaml
 kubectl apply -f kubernetes/volumes/database-pvc.yaml
 
 echo -e "${BLUE}  → ConfigMaps...${NC}"
+kubectl apply -f kubernetes/configmaps/authentication-configmap.yaml
 kubectl apply -f kubernetes/configmaps/catalog-configmap.yaml
 kubectl apply -f kubernetes/configmaps/database-configmap.yaml
+kubectl apply -f kubernetes/configmaps/frontend-config.yaml
 
 echo -e "${BLUE}  → Secrets...${NC}"
 kubectl apply -f kubernetes/secrets/database-secret.yaml
+kubectl apply -f kubernetes/secrets/microsoft-oauth-secret.yaml
 
 echo -e "${GREEN}✓ Infraestrutura base criada${NC}"
 echo ""
@@ -174,6 +183,41 @@ kubectl get pvc -n ecatalog
 echo ""
 
 # ============================================================================
+# Configurar Ingress
+# ============================================================================
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                    Configurar Ingress                      ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+#!/bin/bash
+
+# Enable Ingress addon in Minikube
+echo "Enabling Ingress addon in Minikube..."
+minikube addons enable ingress
+
+# Wait for ingress controller to be ready
+echo "Waiting for ingress controller to be ready..."
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
+
+# Apply the ingress configuration
+echo "Applying ingress configuration..."
+kubectl apply -f kubernetes/ingress/ingress.yaml
+
+# Get the ingress IP
+echo "Checking ingress status..."
+kubectl get ingress -n ecatalog
+
+echo ""
+echo "✅ Ingress setup complete!"
+echo ""
+
+
+
+# ============================================================================
 # URLs disponíveis
 # ============================================================================
 MINIKUBE_IP=$(minikube ip)
@@ -201,6 +245,12 @@ if command -v xdg-open &> /dev/null; then
     xdg-open http://$MINIKUBE_IP:30300 2>/dev/null || true
 fi
 
-# For Windows users
-echo -e "${YELLOW}📝 Para Windows:${NC} minikube service frontend -n ecatalog"
+
 echo ""
+echo "Port-forward to access via localhost (no sudo required):"
+echo "  kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8080:80"
+echo "  Frontend: http://localhost:8080"
+echo "  Callback: http://localhost:8080/api/auth/microsoft/callback"
+echo ""
+
+kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8080:80

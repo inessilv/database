@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Login from "./views/Login";
+import AuthCallback from "./views/AuthCallback";
 import Lista from "./views/Lista";
 import Detalhe from "./views/Detalhe";
 import EditDemo from "./views/EditDemo";
@@ -37,42 +38,44 @@ export default function App() {
         return raw ? (JSON.parse(raw) as User) : null;
     });
 
+    // Check for existing auth token on startup
+    useEffect(() => {
+        const token = localStorage.getItem("auth_token");
+        if (token && !user) {
+            // Token exists but no user - might have refreshed after OAuth
+            // Try to restore user from localStorage
+            const savedUser = localStorage.getItem("app_user");
+            if (savedUser) {
+                try {
+                    setUser(JSON.parse(savedUser));
+                } catch (e) {
+                    console.error("Failed to restore user session", e);
+                    localStorage.removeItem("auth_token");
+                    localStorage.removeItem("app_user");
+                }
+            }
+        }
+    }, []);
+
     const logged = !!user;
     const isAdmin = user?.role === "admin";
-
-    // login "local" (admin/admin, viewer/viewer)
-    const handleLogin = (username: string, password: string) => {
-        const u = username.trim().toLowerCase();
-        const p = password.trim();
-        
-        if (u === "admin" && p === "admin") {
-            const me: User = { 
-                id: "admin001",  // ⬅️ ID MOCK
-                name: "admin001", 
-                role: "admin" 
-            };
-            setUser(me);
-            localStorage.setItem("app_user", JSON.stringify(me));
-            return true;
-        }
-        
-        if (u === "viewer" && p === "viewer") {
-            const me: User = { 
-                id: "viewer-mock-id",  // ⬅️ ID MOCK
-                name: "viewer", 
-                role: "viewer" 
-            };
-            setUser(me);
-            localStorage.setItem("app_user", JSON.stringify(me));
-            return true;
-        }
-        
-        return false;
-    };
 
     const handleLogout = () => {
         setUser(null);
         localStorage.removeItem("app_user");
+        localStorage.removeItem("auth_token");
+    };
+
+    // Microsoft OAuth callback handler
+    const handleMicrosoftCallback = (token: string, userInfo: any) => {
+        const me: User = {
+            id: userInfo.email || "microsoft-user",
+            name: userInfo.name || userInfo.email,
+            role: userInfo.role || "viewer"
+        };
+        setUser(me);
+        localStorage.setItem("app_user", JSON.stringify(me));
+        localStorage.setItem("auth_token", token);
     };
 
     return (
@@ -93,9 +96,15 @@ export default function App() {
                         logged ? (
                             <Navigate to="/demos" replace />
                         ) : (
-                            <Login onLogin={handleLogin} />
+                            <Login />
                         )
                     }
+                />
+
+                {/* Microsoft OAuth Callback */}
+                <Route
+                    path="/auth/callback"
+                    element={<AuthCallback onMicrosoftCallback={handleMicrosoftCallback} />}
                 />
 
                 {/* Root */}
