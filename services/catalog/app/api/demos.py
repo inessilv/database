@@ -103,9 +103,13 @@ async def create_demo(demo: DemoCreate):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Código projeto já existe"
             )
+        # Adicionar informação do criado_por no erro para debug
+        error_msg = f"Erro ao criar demo: {str(e)}"
+        if hasattr(demo, 'criado_por'):
+            error_msg += f" (criado_por={demo.criado_por})"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao criar demo: {str(e)}"
+            detail=error_msg
         )
 
 

@@ -323,18 +323,31 @@ async def microsoft_callback(code: str, state: Optional[str] = None):
                 error_url = f"{frontend_url}/login?error=unauthorized_domain"
                 return RedirectResponse(url=error_url)
             
-            # Se role é viewer e ainda não existe na BD, criar cliente
-            if user_role == "viewer":
+            # Buscar ID do utilizador na base de dados
+            user_db_id = None
+            if user_role == "admin":
+                try:
+                    admin = await db_client.get_admin_by_email(user_email)
+                    user_db_id = admin.get("id")
+                except Exception as e:
+                    print(f"⚠️ Erro ao buscar ID do admin: {e}")
+            elif user_role == "viewer":
+                # Se é viewer, criar cliente se não existir
                 await create_cliente_if_not_exists(user_email, user_name)
+                try:
+                    cliente = await db_client.get_cliente_by_email(user_email)
+                    user_db_id = cliente.get("id")
+                except Exception as e:
+                    print(f"⚠️ Erro ao buscar ID do cliente: {e}")
             
-            print(f"Email {user_email} autenticado com role: {user_role}")
+            print(f"Email {user_email} autenticado com role: {user_role}, ID: {user_db_id}")
             
             # Criar JWT token interno
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
                 data={
                     "sub": user_email,
-                    "user_id": user_info.get("id"),
+                    "user_id": user_db_id or user_email,  # Usar ID da BD ou email como fallback
                     "role": user_role,
                     "provider": "microsoft"
                 },
@@ -344,7 +357,12 @@ async def microsoft_callback(code: str, state: Optional[str] = None):
             # Redirecionar para o frontend com o token
             frontend_url = settings.FRONTEND_URL
             from urllib.parse import quote
-            user_data = json.dumps({'name': user_name, 'email': user_email, 'role': user_role})
+            user_data = json.dumps({
+                'id': user_db_id or user_email,  # ID da base de dados
+                'name': user_name, 
+                'email': user_email, 
+                'role': user_role
+            })
             redirect_url = f"{frontend_url}/auth/callback?token={access_token}&user={quote(user_data)}"
             
             return RedirectResponse(url=redirect_url)

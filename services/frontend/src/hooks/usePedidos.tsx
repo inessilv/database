@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { pedidoService } from "../services/pedidoService";
 import type {PedidoComCliente } from "../types/Pedido";
+import { getAuthUser } from "../utils/cookies";
 
 // Adaptar para o User type atual do App.tsx
 
@@ -31,8 +32,8 @@ interface UsePedidosReturn {
 export function usePedidos(): UsePedidosReturn {
   // Obter user de localStorage
   const getUser = (): User | null => {
-    const raw = localStorage.getItem("app_user");
-    return raw ? (JSON.parse(raw) as User) : null;
+    const user = getAuthUser();
+    return user;
   };
 
   const [pedidos, setPedidos] = useState<PedidoComCliente[]>([]);

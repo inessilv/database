@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { getAuthToken, getAuthUser, setAuthToken, setAuthUser, clearAuth } from "./utils/cookies";
 
 import Navbar from "./components/Navbar";
 import Login from "./views/Login";
@@ -32,26 +33,24 @@ export default function App() {
     const toggleTheme = () =>
         setTheme((t) => (t === "dark" ? "light" : "dark"));
 
-    // sessão
+    // sessão - use cookies instead of localStorage
     const [user, setUser] = useState<User | null>(() => {
-        const raw = localStorage.getItem("app_user");
-        return raw ? (JSON.parse(raw) as User) : null;
+        return getAuthUser();
     });
 
     // Check for existing auth token on startup
     useEffect(() => {
-        const token = localStorage.getItem("auth_token");
+        const token = getAuthToken();
         if (token && !user) {
             // Token exists but no user - might have refreshed after OAuth
-            // Try to restore user from localStorage
-            const savedUser = localStorage.getItem("app_user");
+            // Try to restore user
+            const savedUser = getAuthUser();
             if (savedUser) {
                 try {
-                    setUser(JSON.parse(savedUser));
+                    setUser(savedUser);
                 } catch (e) {
                     console.error("Failed to restore user session", e);
-                    localStorage.removeItem("auth_token");
-                    localStorage.removeItem("app_user");
+                    clearAuth();
                 }
             }
         }
@@ -62,20 +61,19 @@ export default function App() {
 
     const handleLogout = () => {
         setUser(null);
-        localStorage.removeItem("app_user");
-        localStorage.removeItem("auth_token");
+        clearAuth();
     };
 
     // Microsoft OAuth callback handler
     const handleMicrosoftCallback = (token: string, userInfo: any) => {
         const me: User = {
-            id: userInfo.email || "microsoft-user",
+            id: userInfo.id || userInfo.email || "microsoft-user",  // Usar ID da BD
             name: userInfo.name || userInfo.email,
             role: userInfo.role || "viewer"
         };
         setUser(me);
-        localStorage.setItem("app_user", JSON.stringify(me));
-        localStorage.setItem("auth_token", token);
+        setAuthUser(me);
+        setAuthToken(token);
     };
 
     return (

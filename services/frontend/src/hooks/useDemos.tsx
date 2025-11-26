@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { demoService } from "../services/demoService";
 import type { Demo, DemoCreate, DemoUpdate } from "../types/Demo";
+import { getAuthUser } from "../utils/cookies";
 
 type User = { id: string; name: string; role: "admin" | "viewer" };
 
@@ -37,8 +38,8 @@ interface UseDemosReturn {
 export function useDemos(): UseDemosReturn {
   // Obter user de localStorage
   const getUser = (): User | null => {
-    const raw = localStorage.getItem("app_user");
-    return raw ? (JSON.parse(raw) as User) : null;
+    const user = getAuthUser();
+    return user;
   };
 
   const [demos, setDemos] = useState<Demo[]>([]);
