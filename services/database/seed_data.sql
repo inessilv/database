@@ -21,8 +21,10 @@ INSERT INTO admin (id, nome, email, password_hash, contacto) VALUES
      '+351 910 000 003'),
     ('fmafonso', 'Francisco Afonso', 'pg57873@alunos.uminho.pt', 
      '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
-     '+351 910 000 004');
-
+     '+351 910 000 004'),
+    ('isilva', 'Inês Silva', 'pg55949@alunos.uminho.pt', 
+    '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
+    '+351 910 000 004');
 
 -- ============================================================================
 -- DEMOS

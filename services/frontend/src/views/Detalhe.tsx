@@ -268,7 +268,7 @@ export default function Detalhe({ user }: Props) {
 
   const handleEdit = () => {
     if (!demo || !isAdmin) return;
-    navigate(`/demos/${demo.id}/edit`);
+    navigate(`/demos/${demo.id}/update`);
   };
 
   const handleOpenDemo = () => {
