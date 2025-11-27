@@ -29,7 +29,7 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-ENV DATABASE_URL=http://database-internal:8001
+ENV CATALOG_URL=http://catalog.ecatalog.svc.cluster.local:8000
 
 # Comando para executar
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

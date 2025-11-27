@@ -8,10 +8,10 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application Settings"""
     
-    # Database Service URL
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "http://database.ecatalog.svc.cluster.local:8001"
+    # ✅ ALTERADO: Catalog Service URL (em vez de Database direto)
+    CATALOG_URL: str = os.getenv(
+        "CATALOG_URL",
+        "http://catalog:8000"
     )
     
     # HTTP Timeout

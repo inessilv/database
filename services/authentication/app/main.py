@@ -6,7 +6,11 @@ Responsabilidades:
 - Microsoft OAuth integration
 - JWT token generation
 - Role-based access control (Admin/Viewer)
-- Database integration for user management
+- Catalog integration for user management (não acede Database diretamente)
+
+✅ ALTERADO: Usa catalog_client em vez de db_client
+✅ MANTÉM: Toda a lógica original de autenticação
+✅ MANTÉM: Formato correto do JWT token
 """
 
 from fastapi import FastAPI, HTTPException
@@ -18,15 +22,15 @@ from datetime import datetime, timedelta
 import jwt
 import hashlib
 import httpx
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 import json
 import secrets
 
 from app.core.config import settings
-from app.services.database_client import DatabaseClient
+from app.services.catalog_client import CatalogClient
 
-# Initialize database client
-db_client = DatabaseClient()
+# ✅ ALTERADO: Initialize catalog client (não database client)
+catalog_client = CatalogClient()
 
 app = FastAPI(
     title="E-Catalog Authentication API",
@@ -90,56 +94,16 @@ def verify_token(token: str):
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Token inválido")
 
-def get_user_by_email(email: str):
-    """Buscar utilizador por email"""
-    for user in MOCK_USERS:
-        if user["email"] == email:
-            return user
-    return None
 
-def verify_password(plain_password: str, password_hash: str):
-    """Verificar password"""
-    return hashlib.sha256(plain_password.encode()).hexdigest() == password_hash
-
-async def is_email_allowed(email: str) -> tuple[bool, Optional[str]]:
-    """
-    Verificar se o email existe na base de dados (admin ou cliente)
-    Retorna: (permitido: bool, role: Optional[str])
-    """
-    if not email:
-        return False, None
-    
-    email_lower = email.lower()
-    
-    # Verificar se é admin
-    try:
-        admin = await db_client.get_admin_by_email(email_lower)
-        if admin:
-            print(f"Email {email_lower} encontrado como ADMIN na BD")
-            return True, "admin"
-    except Exception as e:
-        print(f"Erro ao verificar admin: {e}")
-    
-    # Verificar se é cliente
-    try:
-        cliente = await db_client.get_cliente_by_email(email_lower)
-        if cliente:
-            print(f"Email {email_lower} encontrado como CLIENTE na BD")
-            return True, "viewer"
-    except Exception as e:
-        print(f"Erro ao verificar cliente: {e}")
-    
-    print(f"Email {email_lower} NÃO encontrado na BD")
-    return False, None
-
-
-async def authenticate_user(email: str) -> tuple[bool, Optional[str]]:
+async def authenticate_user(email: str):
     """
     Autenticar utilizador com hierarquia:
     1. Admin (tabela admin) → role: admin
     2. Cliente (tabela cliente) → role: viewer
     3. Domínio permitido (@alunos.uminho.pt, @ltplabs.com) → role: viewer (auto-criado)
     4. Caso contrário → negado
+    
+    ✅ USA catalog_client para comunicar com Catalog → Database
     
     Retorna: (autenticado: bool, role: Optional[str])
     """
@@ -150,7 +114,7 @@ async def authenticate_user(email: str) -> tuple[bool, Optional[str]]:
     
     # 1. Verificar se é admin
     try:
-        admin = await db_client.get_admin_by_email(email_lower)
+        admin = await catalog_client.get_admin_by_email(email_lower)
         if admin:
             print(f"Email {email_lower} autenticado como ADMIN")
             return True, "admin"
@@ -159,7 +123,7 @@ async def authenticate_user(email: str) -> tuple[bool, Optional[str]]:
     
     # 2. Verificar se é cliente
     try:
-        cliente = await db_client.get_cliente_by_email(email_lower)
+        cliente = await catalog_client.get_cliente_by_email(email_lower)
         if cliente:
             print(f"Email {email_lower} autenticado como CLIENTE")
             return True, "viewer"
@@ -180,10 +144,12 @@ async def create_cliente_if_not_exists(email: str, name: str) -> None:
     """
     Criar cliente automaticamente se não existir
     Usado para utilizadores de domínios permitidos
+    
+    ✅ USA catalog_client para criar o cliente
     """
     try:
         # Verificar se já existe
-        existing = await db_client.get_cliente_by_email(email.lower())
+        existing = await catalog_client.get_cliente_by_email(email.lower())
         if existing:
             print(f"ℹ️ Cliente {email} já existe na BD")
             return
@@ -193,9 +159,6 @@ async def create_cliente_if_not_exists(email: str, name: str) -> None:
     
     try:
         # Criar novo cliente
-        from datetime import datetime, timedelta
-        import secrets
-        
         cliente_data = {
             "id": f"oauth_{secrets.token_hex(8)}",
             "nome": name,
@@ -205,7 +168,7 @@ async def create_cliente_if_not_exists(email: str, name: str) -> None:
             "criado_por": "system_oauth"
         }
         
-        await db_client.create_cliente(cliente_data)
+        await catalog_client.create_cliente(cliente_data)
         print(f"✅ Cliente {email} criado automaticamente na BD")
     except Exception as e:
         print(f"⚠️ Erro ao criar cliente {email}: {e}")
@@ -268,6 +231,7 @@ async def microsoft_login():
     }
     
     auth_url = f"{MICROSOFT_AUTHORITY}/oauth2/v2.0/authorize?{urlencode(params)}"
+    print(f"🔐 Redirecting to Microsoft login: {auth_url}")
     return RedirectResponse(url=auth_url)
 
 
@@ -276,9 +240,13 @@ async def microsoft_callback(code: str, state: Optional[str] = None):
     """
     Callback para autenticação Microsoft
     Recebe o código de autorização e troca por token de acesso
+    
+    ✅ USA catalog_client para verificar utilizador e buscar IDs
     """
     if not code:
         raise HTTPException(status_code=400, detail="Código de autorização não fornecido")
+    
+    print(f"📥 Received OAuth callback with code: {code[:20]}...")
     
     # Trocar código por token
     token_url = f"{MICROSOFT_AUTHORITY}/oauth2/v2.0/token"
@@ -305,6 +273,8 @@ async def microsoft_callback(code: str, state: Optional[str] = None):
             token_json = token_response.json()
             ms_access_token = token_json.get("access_token")
             
+            print(f"✅ Got access token from Microsoft")
+            
             # Obter informações do utilizador usando o token da Microsoft
             user_info = await get_microsoft_user_info(ms_access_token)
             
@@ -312,51 +282,53 @@ async def microsoft_callback(code: str, state: Optional[str] = None):
             user_email = user_info.get("mail") or user_info.get("userPrincipalName")
             user_name = user_info.get("displayName", user_email)
             
-            print(f"Microsoft OAuth - Email: {user_email}")
+            print(f"👤 User info: {user_name} ({user_email})")
             
             # Autenticar utilizador (verifica admin -> cliente -> domínio permitido)
             authenticated, user_role = await authenticate_user(user_email)
             
             if not authenticated:
-                print(f"Email {user_email} não autorizado")
+                print(f"❌ Email {user_email} não autorizado")
                 frontend_url = settings.FRONTEND_URL
                 error_url = f"{frontend_url}/login?error=unauthorized_domain"
                 return RedirectResponse(url=error_url)
             
-            # Buscar ID do utilizador na base de dados
+            print(f"✅ Email {user_email} autenticado com role: {user_role}")
+            
+            # ✅ Buscar ID do utilizador na base de dados via catalog_client
             user_db_id = None
             if user_role == "admin":
                 try:
-                    admin = await db_client.get_admin_by_email(user_email)
+                    admin = await catalog_client.get_admin_by_email(user_email)
                     user_db_id = admin.get("id")
+                    print(f"📋 Admin ID: {user_db_id}")
                 except Exception as e:
                     print(f"⚠️ Erro ao buscar ID do admin: {e}")
+            
             elif user_role == "viewer":
                 # Se é viewer, criar cliente se não existir
                 await create_cliente_if_not_exists(user_email, user_name)
                 try:
-                    cliente = await db_client.get_cliente_by_email(user_email)
+                    cliente = await catalog_client.get_cliente_by_email(user_email)
                     user_db_id = cliente.get("id")
+                    print(f"📋 Cliente ID: {user_db_id}")
                 except Exception as e:
                     print(f"⚠️ Erro ao buscar ID do cliente: {e}")
             
-            print(f"Email {user_email} autenticado com role: {user_role}, ID: {user_db_id}")
-            
-            # Criar JWT token interno
+            # ✅ Criar JWT token interno com formato CORRETO
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
                 data={
-                    "sub": user_email,
-                    "user_id": user_db_id or user_email,  # Usar ID da BD ou email como fallback
-                    "role": user_role,
-                    "provider": "microsoft"
+                    "sub": user_email,                      # ✅ Campo padrão JWT (subject)
+                    "user_id": user_db_id or user_email,   # ✅ ID da BD ou email fallback
+                    "role": user_role,                      # ✅ Role (admin/viewer)
+                    "provider": "microsoft"                 # ✅ Provider
                 },
                 expires_delta=access_token_expires
             )
             
-            # Redirecionar para o frontend com o token
+            # ✅ Redirecionar para o frontend com token E user data (formato correto)
             frontend_url = settings.FRONTEND_URL
-            from urllib.parse import quote
             user_data = json.dumps({
                 'id': user_db_id or user_email,  # ID da base de dados
                 'name': user_name, 
@@ -365,12 +337,21 @@ async def microsoft_callback(code: str, state: Optional[str] = None):
             })
             redirect_url = f"{frontend_url}/auth/callback?token={access_token}&user={quote(user_data)}"
             
+            print(f"🔄 Redirecting to frontend: {redirect_url[:100]}...")
+            
             return RedirectResponse(url=redirect_url)
             
     except httpx.RequestError as e:
+        print(f"❌ HTTP Error: {e}")
         raise HTTPException(
             status_code=503,
             detail=f"Erro ao comunicar com Microsoft: {str(e)}"
+        )
+    except Exception as e:
+        print(f"❌ Unexpected Error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro inesperado: {str(e)}"
         )
 
 
@@ -402,7 +383,13 @@ async def get_microsoft_user_info(access_token: str) -> dict:
 
 @app.on_event("startup")
 async def startup_event():
-    print("🔐 Authentication Service iniciado!")
+    print("=" * 60)
+    print("🔐 E-Catalog Authentication Service")
+    print("=" * 60)
+    print(f"✅ Service ready on port 8080")
+    print(f"📖 Docs: http://localhost:8080/docs")
+    print(f"🔗 Catalog URL: {settings.CATALOG_URL}")
     print(f"🌐 Allowed domains: {settings.ALLOWED_DOMAINS}")
     print(f"🔗 Microsoft OAuth redirect: {MICROSOFT_REDIRECT_URI}")
     print("📋 Ordem de autenticação: Admin → Cliente → Domínio Permitido")
+    print("=" * 60)

@@ -55,10 +55,6 @@ class DatabaseClient:
         """GET /db/admin/by-email/{email}"""
         return await self._request("GET", f"/db/admin/by-email/{email}")
     
-    async def get_admin_with_password(self, email: str) -> Dict[str, Any]:
-        """GET /db/admin/by-email-with-password/{email} - Para autenticação"""
-        return await self._request("GET", f"/db/admin/by-email-with-password/{email}")
-    
     async def create_admin(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """POST /db/admin/"""
         return await self._request("POST", "/db/admin/", json=data)
@@ -94,10 +90,6 @@ class DatabaseClient:
     async def get_cliente_by_email(self, email: str) -> Dict[str, Any]:
         """GET /db/clientes/by-email/{email}"""
         return await self._request("GET", f"/db/clientes/by-email/{email}")
-    
-    async def get_cliente_with_password(self, email: str) -> Dict[str, Any]:
-        """GET /db/clientes/by-email-with-password/{email} - Para autenticação"""
-        return await self._request("GET", f"/db/clientes/by-email-with-password/{email}")
     
     async def create_cliente(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """POST /db/clientes/"""

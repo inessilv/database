@@ -31,6 +31,15 @@ spec:
           value: "1.0.0"
         - name: ENVIRONMENT
           value: "production"
+        
+        # ✅ ADICIONADO: Catalog URL environment variable
+        - name: CATALOG_URL
+          valueFrom:
+            configMapKeyRef:
+              name: authentication-config
+              key: catalog-url
+        
+        # Microsoft OAuth Configuration
         - name: MICROSOFT_CLIENT_ID
           valueFrom:
             secretKeyRef:
@@ -56,6 +65,7 @@ spec:
             configMapKeyRef:
               name: frontend-config
               key: frontend-url
+        
         livenessProbe:
           httpGet:
             path: /health

@@ -161,7 +161,7 @@ INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por)
 INSERT INTO log (cliente_id, demo_id, tipo, mensagem, timestamp) VALUES
     ('cliente001', NULL, 'login', 'Login bem-sucedido', 
      datetime('now', '-2 hours')),
-    ('cliente001', 'demo001', 'demo_aberta', 'Abriu demo CRM', 
+    ('cliente001', 'demo001', '4', 'Abriu demo CRM', 
      datetime('now', '-2 hours', '+5 minutes')),
     ('cliente001', 'demo001', 'demo_fechada', 'Fechou demo CRM após 20 minutos', 
      datetime('now', '-2 hours', '+25 minutes')),
