@@ -160,12 +160,11 @@ async def create_cliente_if_not_exists(email: str, name: str) -> None:
     try:
         # Criar novo cliente
         cliente_data = {
-            "id": f"oauth_{secrets.token_hex(8)}",
             "nome": name,
             "email": email.lower(),
-            "password_hash": "",  # OAuth não precisa de password
+            "password": "",  # OAuth não precisa de password
             "data_expiracao": (datetime.now() + timedelta(days=30)).isoformat(),
-            "criado_por": "system_oauth"
+            "criado_por": "isilva" # TODO trocar isto para system qqlr coisa
         }
         
         await catalog_client.create_cliente(cliente_data)
