@@ -1,8 +1,8 @@
 /**
  * ConfirmModal Component
  * 
- * Modal genérico para confirmar ações
- * Pode ser usado para aprovar, rejeitar, eliminar, etc.
+ * Modal genérico para confirmar ações com design moderno
+ * Aparece centrado no ecrã com backdrop escurecido
  */
 
 import React from "react";
@@ -33,16 +33,25 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   /**
-   * Cores do botão de confirmação
+   * Estilos do botão de confirmação baseado na cor
    */
-  const getConfirmButtonClasses = () => {
+  const getConfirmButtonStyle = (): React.CSSProperties => {
     const colors = {
-      green: "bg-green-600 hover:bg-green-700 focus:ring-green-500",
-      red: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-      blue: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
+      green: {
+        backgroundColor: "#10b981",
+        color: "white",
+      },
+      red: {
+        backgroundColor: "#ef4444",
+        color: "white",
+      },
+      blue: {
+        backgroundColor: "var(--primary)",
+        color: "white",
+      },
     };
 
-    return `px-4 py-2 text-white rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${colors[confirmColor]}`;
+    return colors[confirmColor];
   };
 
   /**
@@ -77,50 +86,190 @@ export default function ConfirmModal({
   }, [isOpen, onClose, loading]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
-      onClick={handleBackdropClick}
-    >
+    <>
+      {/* Backdrop com animação de fade-in */}
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+          backdropFilter: "blur(4px)",
+          zIndex: 9998,
+          animation: "fadeIn 0.2s ease-out",
+        }}
+        onClick={handleBackdropClick}
+      />
+
+      {/* Modal centrado com animação de scale */}
+      <div
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 9999,
+          width: "90%",
+          maxWidth: "480px",
+          animation: "scaleIn 0.3s ease-out",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        </div>
-
-        {/* Body */}
-        <div className="px-6 py-4">
-          <p className="text-gray-700 leading-relaxed">{message}</p>
-        </div>
-
-        {/* Footer com ações */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        <div
+          className="card"
+          style={{
+            padding: 0,
+            backgroundColor: "var(--bg)",
+            border: "1px solid var(--stroke)",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "24px 24px 20px 24px",
+              borderBottom: "1px solid var(--stroke)",
+            }}
           >
-            {cancelText}
-          </button>
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: "700",
+                color: "var(--text)",
+                margin: 0,
+              }}
+            >
+              {title}
+            </h3>
+          </div>
 
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className={getConfirmButtonClasses()}
+          {/* Body */}
+          <div
+            style={{
+              padding: "24px",
+            }}
           >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                A processar...
-              </div>
-            ) : (
-              confirmText
-            )}
-          </button>
+            <p
+              style={{
+                fontSize: "0.9375rem",
+                lineHeight: "1.6",
+                color: "var(--text)",
+                margin: 0,
+              }}
+            >
+              {message}
+            </p>
+          </div>
+
+          {/* Footer com ações */}
+          <div
+            style={{
+              padding: "16px 24px 24px 24px",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "12px",
+            }}
+          >
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="btn-ghost"
+              style={{
+                padding: "10px 20px",
+                fontSize: "0.9375rem",
+                fontWeight: "600",
+                opacity: loading ? 0.5 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {cancelText}
+            </button>
+
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              style={{
+                padding: "10px 24px",
+                fontSize: "0.9375rem",
+                fontWeight: "600",
+                border: "none",
+                borderRadius: "8px",
+                cursor: loading ? "not-allowed" : "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                opacity: loading ? 0.7 : 1,
+                ...getConfirmButtonStyle(),
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.opacity = "0.9";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.opacity = "1";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }
+              }}
+            >
+              {loading ? (
+                <>
+                  <div
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      border: "2px solid white",
+                      borderTopColor: "transparent",
+                      borderRadius: "50%",
+                      animation: "spin 0.6s linear infinite",
+                    }}
+                  />
+                  A processar...
+                </>
+              ) : (
+                confirmText
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* CSS das animações */}
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
   );
 }

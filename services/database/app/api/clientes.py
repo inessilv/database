@@ -17,7 +17,6 @@ class ClienteBase(BaseModel):
 
 
 class ClienteCreate(ClienteBase):
-    password_hash: str
     data_expiracao: str  # ISO format: "2025-12-31"
     criado_por: str  # admin_id
 
@@ -25,7 +24,6 @@ class ClienteCreate(ClienteBase):
 class ClienteUpdate(BaseModel):
     nome: Optional[str] = None
     email: Optional[EmailStr] = None
-    password_hash: Optional[str] = None
 
 
 class ClienteResponse(ClienteBase):
@@ -106,24 +104,6 @@ def get_cliente_by_email(email: str):
     return clientes[0]
 
 
-@router.get("/by-email-with-password/{email}")
-def get_cliente_with_password(email: str):
-    """
-    Obter cliente com password_hash (para autenticação)
-    NOTA: Inclui password_hash - usar apenas para autenticação
-    """
-    query = "SELECT * FROM cliente WHERE email = ?"
-    clientes = db.execute_query(query, (email,))
-    
-    if not clientes:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Cliente com email {email} não encontrado"
-        )
-    
-    return clientes[0]
-
-
 @router.post("/", response_model=ClienteResponse, status_code=status.HTTP_201_CREATED)
 def create_cliente(cliente: ClienteCreate):
     """Criar novo cliente"""
@@ -131,14 +111,14 @@ def create_cliente(cliente: ClienteCreate):
     cliente_id = secrets.token_hex(16)
     
     query = """
-        INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO cliente (id, nome, email, data_expiracao, criado_por)
+        VALUES (?, ?, ?, ?, ?)
     """
     
     try:
         db.execute_insert(
             query,
-            (cliente_id, cliente.nome, cliente.email, cliente.password_hash,
+            (cliente_id, cliente.nome, cliente.email,
              cliente.data_expiracao, cliente.criado_por)
         )
     except Exception as e:
@@ -177,10 +157,6 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
     if cliente.email is not None:
         updates.append("email = ?")
         params.append(cliente.email)
-    
-    if cliente.password_hash is not None:
-        updates.append("password_hash = ?")
-        params.append(cliente.password_hash)
     
     
     if not updates:

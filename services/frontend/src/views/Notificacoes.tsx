@@ -318,11 +318,11 @@ export default function Notificacoes({ user }: Props) {
               marginTop: "24px",
               padding: "32px",
               textAlign: "center",
-              backgroundColor: "#fee",
-              border: "1px solid #fcc",
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid var(--danger)",
             }}
           >
-            <p style={{ color: "#c00", fontWeight: "600", marginBottom: "16px" }}>
+            <p style={{ color: "var(--danger)", fontWeight: "600", marginBottom: "16px" }}>
               ❌ {error}
             </p>
             <button onClick={refreshPedidos} className="button">

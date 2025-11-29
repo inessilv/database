@@ -1,30 +1,20 @@
 -- ============================================================================
 -- SEED DATA - Versão para o Schema Atual
 -- ============================================================================
--- Password para todos: "password123"
--- Hash bcrypt: $2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q
+-- Autenticação via Microsoft OAuth apenas
 -- ============================================================================
 
 -- ============================================================================
 -- ADMINS
 -- ============================================================================
 
-INSERT INTO admin (id, nome, email, password_hash, contacto) VALUES
-    ('admin001', 'Administrador Sistema', 'admin@ltplabs.com', 
-     '$2y$14$RJ7J/nf/Z395D3uvy4cF8.vNEj6oUGC6Q.k3CEpTHrloAe.F9B002', 
-     '+351 910 000 001'),
-    ('admin002', 'João Silva', 'joao.silva@ltplabs.com', 
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
-     '+351 910 000 002'),
-    ('admin003', 'Maria Santos', 'maria.santos@ltplabs.com', 
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
-     '+351 910 000 003'),
-    ('fmafonso', 'Francisco Afonso', 'pg57873@alunos.uminho.pt', 
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
-     '+351 910 000 004'),
-    ('isilva', 'Inês Silva', 'pg55949@alunos.uminho.pt', 
-    '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q', 
-    '+351 910 000 004');
+INSERT INTO admin (id, nome, email, contacto) VALUES
+    ('admin001', 'Administrador Sistema', 'admin@ltplabs.com', '+351 910 000 001'),
+    ('admin002', 'João Silva', 'joao.silva@ltplabs.com', '+351 910 000 002'),
+    ('admin003', 'Maria Santos', 'maria.santos@ltplabs.com', '+351 910 000 003'),
+    ('fmafonso', 'Francisco Afonso', 'pg57873@alunos.uminho.pt', '+351 910 000 004'),
+    ('isilva', 'Inês Silva', 'pg55949@alunos.uminho.pt', '+351 910 000 005'),
+    ('jmoura', 'João Moura', 'pg60273@alunos.uminho.pt', '+351 910 000 006');
 
 -- ============================================================================
 -- DEMOS
@@ -107,51 +97,53 @@ INSERT INTO demo (id, nome, descricao, vertical, horizontal, keywords, codigo_pr
 -- ============================================================================
 
 -- Cliente 1: ATIVO (acesso válido - 25 dias restantes)
-INSERT INTO cliente (id, nome, email, password_hash, 
-                     data_registo, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, data_registo, data_expiracao, criado_por) VALUES
     ('cliente001', 
      'Pedro Oliveira', 
      'pedro.oliveira@empresa-a.com',
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
      datetime('now', '-5 days'), 
      datetime('now', '+25 days'), 
      'admin002');
 
 -- Cliente 2: EXPIRA EM BREVE (3 dias)
-INSERT INTO cliente (id, nome, email, password_hash,data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
     ('cliente002', 
      'Ana Costa', 
      'ana.costa@empresa-b.pt',
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
      datetime('now', '+3 days'), 
      'admin003');
 
 -- Cliente 3: EXPIRADO (há 5 dias)
-INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
     ('cliente003', 
      'Rui Ferreira', 
      'rui.ferreira@empresa-c.com',
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
      datetime('now', '-5 days'), 
      'admin002');
 
 -- Cliente 4: FUTURO (acesso começa em 2 dias)
-INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
     ('cliente004', 
      'Sofia Almeida', 
      'sofia.almeida@empresa-d.pt',
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
      datetime('now', '+32 days'), 
      'admin003');
 
 -- Cliente 5: Outro cliente ativo
-INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por) VALUES
+INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
     ('cliente005', 
      'Carlos Mendes', 
      'carlos.mendes@empresa-e.com',
-     '$2b$10$rWHQjQ6xGJZ5lZK0hN8E7uKGZ9yN8zN5pL7bPHKQHfZMZjJZKQG5q',
      datetime('now', '+15 days'), 
      'admin002');
+
+INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
+    ('cliente007', 
+     'Daniel Henrique Cracel Rodrigues', 
+     'pg57871@alunos.uminho.pt',
+     datetime('now', '+2 days'), 
+     'isilva');
+    
 
 -- ============================================================================
 -- LOGS DE ATIVIDADE
@@ -161,7 +153,7 @@ INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por)
 INSERT INTO log (cliente_id, demo_id, tipo, mensagem, timestamp) VALUES
     ('cliente001', NULL, 'login', 'Login bem-sucedido', 
      datetime('now', '-2 hours')),
-    ('cliente001', 'demo001', '4', 'Abriu demo CRM', 
+    ('cliente001', 'demo001', 'demo_aberta', 'Abriu demo CRM', 
      datetime('now', '-2 hours', '+5 minutes')),
     ('cliente001', 'demo001', 'demo_fechada', 'Fechou demo CRM após 20 minutos', 
      datetime('now', '-2 hours', '+25 minutes')),

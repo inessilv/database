@@ -32,7 +32,6 @@ spec:
         - name: ENVIRONMENT
           value: "production"
         
-        # ✅ ADICIONADO: Catalog URL environment variable
         - name: CATALOG_URL
           valueFrom:
             configMapKeyRef:

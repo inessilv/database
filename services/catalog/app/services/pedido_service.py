@@ -38,11 +38,17 @@ class PedidoService:
         pedido = await db_client.get_pedido(pedido_id)
         return PedidoResponseCliente(**pedido)
     
-    async def create_pedido(self, pedido: PedidoCreate) -> PedidoResponse:
+
+    async def getByClienteId(self, cliente_id: str) -> PedidoResponseCliente:
+        """Obter pedido por ID"""
+        pedido = await db_client.get_pedido_by_cliente(cliente_id)
+        return PedidoResponseCliente(**pedido)
+    
+    async def create_pedido(self, pedido: PedidoCreate) -> PedidoResponseCliente:
         """Criar novo pedido"""
         pedido_data = pedido.model_dump()
         created = await db_client.create_pedido(pedido_data)
-        return PedidoResponse(**created)
+        return PedidoResponseCliente(**created)
     
     async def approve_pedido(
         self, 

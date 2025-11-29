@@ -37,11 +37,12 @@ export default function Login() {
                     <div style={{
                         padding: "12px",
                         marginBottom: "16px",
-                        backgroundColor: "#fee",
-                        border: "1px solid #fcc",
-                        borderRadius: "4px",
-                        color: "#c33",
-                        fontSize: "14px"
+                        backgroundColor: "var(--danger)",
+                        border: "1px solid var(--danger-2)",
+                        borderRadius: "8px",
+                        color: "#fff",
+                        fontSize: "14px",
+                        fontWeight: "600"
                     }}>
                         {errorMessage}
                     </div>
@@ -50,7 +51,7 @@ export default function Login() {
                 <p style={{ 
                     textAlign: "center", 
                     marginBottom: "24px",
-                    color: "#666" 
+                    color: "var(--muted)" 
                 }}>
                     Faça login com sua conta Microsoft
                 </p>

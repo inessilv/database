@@ -398,8 +398,8 @@ export default function Detalhe({ user }: Props) {
                 onClick={handleDelete}
                 style={{
                   padding: "10px 20px",
-                  backgroundColor: "#fee",
-                  color: "#dc2626",
+                  backgroundColor: "rgba(239, 68, 68, 0.1)",
+                  color: "var(--danger)",
                   border: "1px solid #fca5a5",
                   borderRadius: "8px",
                   fontSize: "0.875rem",

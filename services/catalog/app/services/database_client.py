@@ -160,9 +160,13 @@ class DatabaseClient:
         """GET /db/pedidos/{id}"""
         return await self._request("GET", f"/db/pedidos/{pedido_id}")
     
+    async def get_pedido_by_cliente(self, cliente_id: str) -> Dict[str, Any]:
+        """GET /db/pedidos/{id}"""
+        return await self._request("GET", f"/db/pedidos/by-cliente/{cliente_id}")
+    
     async def create_pedido(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """POST /db/pedidos/"""
-        return await self._request("POST", "/db/pedidos/", json=data)
+        """POST /db/pedidos/create"""
+        return await self._request("POST", "/db/pedidos/create", json=data)
     
     async def approve_pedido(self, pedido_id: str, admin_id: str) -> Dict[str, Any]:
         """POST /db/pedidos/{id}/approve - TRANSACTION"""

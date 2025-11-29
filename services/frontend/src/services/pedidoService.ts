@@ -79,13 +79,6 @@ class PedidoService {
     return api.delete<void>(`/api/pedidos/${id}`);
   }
 
-  /**
-   * Obter pedidos por cliente
-   */
-  async getByClienteId(clienteId: string): Promise<Pedido[]> {
-    const pedidos = await this.getAll();
-    return pedidos.filter((p) => p.cliente_id === clienteId);
-  }
 
   /**
    * Obter pedidos aprovados
@@ -101,6 +94,14 @@ class PedidoService {
   async getRejected(): Promise<PedidoComCliente[]> {
     const pedidos = await this.getAll();
     return pedidos.filter((p) => p.estado === "rejeitado");
+  }
+
+  /**
+ * Obter pedidos por cliente
+ * GET /api/pedidos/by-cliente/{cliente_id}
+ */
+  async getByClienteId(clienteId: string): Promise<Pedido[]> {
+    return api.get<Pedido[]>(`/api/pedidos/by-cliente/${clienteId}`);
   }
 
   /**

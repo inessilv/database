@@ -8,5 +8,4 @@ data:
   microsoft-redirect-uri: "http://localhost:8080/api/auth/microsoft/callback"
   microsoft-tenant-id: "common"
   
-  # ✅ ADICIONADO: Catalog Service URL
   catalog-url: "http://catalog.ecatalog.svc.cluster.local:8000"

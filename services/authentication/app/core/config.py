@@ -8,7 +8,6 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application Settings"""
     
-    # ✅ ALTERADO: Catalog Service URL (em vez de Database direto)
     CATALOG_URL: str = os.getenv(
         "CATALOG_URL",
         "http://catalog:8000"

@@ -33,7 +33,6 @@ export default function ClienteModal({
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
-    password: "",
     data_expiracao: "",
   });
 
@@ -47,7 +46,6 @@ export default function ClienteModal({
       setFormData({
         nome: cliente.nome,
         email: cliente.email,
-        password: "",
         data_expiracao: cliente.data_expiracao.split("T")[0], // Formato YYYY-MM-DD
       });
       setErrors({});
@@ -59,7 +57,6 @@ export default function ClienteModal({
       setFormData({
         nome: "",
         email: "",
-        password: "",
         data_expiracao: dataExpiracao.toISOString().split("T")[0],
       });
       setErrors({});
@@ -80,10 +77,6 @@ export default function ClienteModal({
       newErrors.email = "Email é obrigatório";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Email inválido";
-    }
-
-    if (isCreate && !formData.password.trim()) {
-      newErrors.password = "Password é obrigatória na criação";
     }
 
     if (isCreate && !formData.data_expiracao) {
@@ -111,7 +104,6 @@ export default function ClienteModal({
         const createData: ClienteCreate = {
           nome: formData.nome.trim(),
           email: formData.email.trim(),
-          password: formData.password,
           data_registo: dataRegisto,
           data_expiracao: dataExpiracao,
           criado_por: userId,
@@ -124,11 +116,6 @@ export default function ClienteModal({
           nome: formData.nome.trim(),
           email: formData.email.trim(),
         };
-
-        // Apenas incluir password se foi preenchida
-        if (formData.password.trim()) {
-          updateData.password = formData.password;
-        }
 
         await onSave(updateData);
       }
@@ -279,37 +266,6 @@ export default function ClienteModal({
                   style={{ color: "#ef4444", fontSize: "0.875rem" }}
                 >
                   {errors.email}
-                </span>
-              )}
-            </div>
-
-            {/* Password */}
-            <div className="field">
-              <label className="label">
-                Password{" "}
-                {isCreate && <span style={{ color: "#ef4444" }}>*</span>}
-                {!isCreate && (
-                  <span style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
-                    (deixar em branco para não alterar)
-                  </span>
-                )}
-              </label>
-              <input
-                type="password"
-                className="input"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                placeholder={isCreate ? "Mínimo 6 caracteres" : "Nova password"}
-                disabled={loading}
-              />
-              {errors.password && (
-                <span
-                  className="helper-error"
-                  style={{ color: "#ef4444", fontSize: "0.875rem" }}
-                >
-                  {errors.password}
                 </span>
               )}
             </div>

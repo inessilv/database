@@ -24,7 +24,7 @@ echo ""
 echo -e "${YELLOW}📦 Passo 1/9: Verificando Minikube...${NC}"
 if ! minikube status | grep -q "Running"; then
     echo -e "${BLUE}🚀 Iniciando Minikube...${NC}"
-    minikube start
+    minikube start --cni=calico
 else
     echo -e "${GREEN}✓ Minikube já está running${NC}"
 fi
@@ -85,6 +85,12 @@ kubectl apply -f kubernetes/namespaces/ecatalog-namespace.yaml
 echo -e "${BLUE}  → Volumes (PV + PVC)...${NC}"
 kubectl apply -f kubernetes/volumes/database-pv.yaml
 kubectl apply -f kubernetes/volumes/database-pvc.yaml
+
+# Atualizar frontend-config.yaml com o IP correto
+FRONTEND_CONFIG_FILE="kubernetes/configmaps/frontend-config.yaml"
+
+echo -e "${BLUE}🔧 Atualizando frontend-config.yaml com o Minikube IP...${NC}"
+sed -i "s|^\(\s*frontend-url:\s*\).*|\1\"http://$MINIKUBE_IP:30300\"|" "$FRONTEND_CONFIG_FILE"
 
 echo -e "${BLUE}  → ConfigMaps...${NC}"
 kubectl apply -f kubernetes/configmaps/authentication-configmap.yaml
@@ -196,12 +202,25 @@ echo ""
 echo "Enabling Ingress addon in Minikube..."
 minikube addons enable ingress
 
-# Wait for ingress controller to be ready
+echo "Waiting for ingress controller job (admission-create)..."
+kubectl wait --namespace ingress-nginx \
+  --for=condition=complete job/ingress-nginx-admission-create \
+  --timeout=180s
+
+echo "Waiting for ingress controller job (admission-patch)..."
+kubectl wait --namespace ingress-nginx \
+  --for=condition=complete job/ingress-nginx-admission-patch \
+  --timeout=180s
+
 echo "Waiting for ingress controller to be ready..."
 kubectl wait --namespace ingress-nginx \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
-  --timeout=120s
+  --timeout=180s
+
+echo "Giving ingress some time to stabilize..."
+sleep 16
+
 
 # Apply the ingress configuration
 echo "Applying ingress configuration..."

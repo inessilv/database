@@ -148,7 +148,7 @@ body[data-theme="dark"] .btn-ghost:hover {
 }
 .input {
     width: 100%;
-    background: #fff;
+    background: var(--bg-2);
     color: var(--text);
     border: 1px solid var(--stroke);
     border-radius: 10px;
@@ -160,6 +160,9 @@ body[data-theme="dark"] .btn-ghost:hover {
 .input:focus {
     border-color: var(--focus);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+body[data-theme="dark"] .input:focus {
+    box-shadow: 0 0 0 3px rgba(46, 129, 246, 0.3);
 }
 .input[readonly] {
     background: #f3f4f6;

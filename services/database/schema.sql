@@ -10,7 +10,6 @@ CREATE TABLE admin (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
     contacto VARCHAR(25)
 );
 
@@ -24,7 +23,6 @@ CREATE TABLE cliente (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
     data_registo TEXT DEFAULT (datetime('now')),
     data_expiracao TEXT NOT NULL,
     criado_por TEXT NOT NULL,
@@ -147,7 +145,7 @@ SELECT
     a.nome as criado_por_nome
 FROM demo d
 LEFT JOIN admin a ON d.criado_por = a.id
-WHERE d.estado = 'ativa';  -- ✅ CORRIGIDO: era d.status = 'active'
+WHERE d.estado = 'ativa';
 
 -- Pedidos pendentes
 CREATE VIEW v_pending_requests AS
@@ -169,7 +167,7 @@ SELECT
     c.email,
     COUNT(DISTINCT CASE WHEN l.tipo = 'demo_aberta' THEN l.demo_id END) as demos_opened,
     COUNT(CASE WHEN l.tipo = 'demo_aberta' THEN 1 END) as total_opens,
-    COUNT(CASE WHEN l.tipo = 'login' THEN 1 END) as total_logins,  -- ✅ CORRIGIDO: era 'acesso'
+    COUNT(CASE WHEN l.tipo = 'login' THEN 1 END) as total_logins,
     MAX(l.timestamp) as ultima_atividade
 FROM cliente c
 LEFT JOIN log l ON c.id = l.cliente_id
