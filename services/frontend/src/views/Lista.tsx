@@ -1,14 +1,18 @@
 /**
- * Lista View (Refactored)
+ * Lista View (Refactored + Sistema de Renovação)
  * 
  * Vista principal do catálogo de demos
- * Com filtros por Vertical, Horizontal, pesquisa e paginação
+ * Com filtros por Vertical, Horizontal, pesquisa, paginação
+ * + Banner de expiração e bloqueio para clientes
  */
 
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDemos } from "../hooks/useDemos";
+import { useClienteAuth } from "../hooks/useClienteAuth";
+import ExpirationBanner from "../components/ExpirationBanner";
 import type { Demo } from "../types/Demo";
+import { getAuthUser } from "../utils/cookies";
 
 type User = { id: string; name: string; role: "admin" | "viewer" };
 
@@ -30,7 +34,14 @@ export default function Lista({ user }: Props) {
     refreshDemos,
   } = useDemos();
 
+
+  const clienteAuth = user.role === "viewer" ? useClienteAuth() : null;
+
   const isAdmin = user.role === "admin";
+  const isViewer = user.role === "viewer";
+
+  const clienteStatus = clienteAuth?.status || null;
+  const clienteExpirado = clienteStatus === "expirado";
 
   // Estados de filtros
   const [selectedVertical, setSelectedVertical] = useState<string>("todas");
@@ -39,30 +50,43 @@ export default function Lista({ user }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
 
   /**
-   * Normalizar URL para abrir demo
-   */
-  const normalizeToUrl = (raw?: string): string | null => {
-    if (!raw) return null;
-    const s = raw.trim();
-    try {
-      const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
-      const u = new URL(withProto);
-      return u.toString();
-    } catch {
-      return null;
-    }
-  };
-
-  /**
    * Abrir demo em nova aba
+   * ✅ MODIFICADO: Bloqueia se cliente expirado
    */
-  const handleOpenDemo = (demo: Demo) => {
-    const url = normalizeToUrl(demo.url || "");
-    if (!url) {
-      alert("Esta demo não tem um URL configurado.");
-      return;
+  const handleOpenDemo = async (demo: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!demo?.url) return;
+    
+    try {
+      const user = getAuthUser();
+      if (!user || !user.id) {
+        alert("Erro: utilizador não autenticado");
+        return;
+      }
+      
+      const CATALOG_URL = window.location.origin.replace(':30300', ':30800');
+      const response = await fetch(`${CATALOG_URL}/api/demos/${demo.id}/open`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cliente_id: user.id
+        })
+      });
+      
+      if (!response.ok) {
+        console.error("Erro ao registar abertura de demo:", await response.text());
+      } else {
+        console.log("Demo aberta registada com sucesso");
+      }
+      
+      window.open(demo.url, "_blank");
+      
+    } catch (error) {
+      console.error("Erro ao abrir demo:", error);
+      window.open(demo.url, "_blank");
     }
-    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   /**
@@ -350,6 +374,9 @@ export default function Lista({ user }: Props) {
 
   return (
     <div className="page-container">
+      {}
+      {isViewer && <ExpirationBanner />}
+
       {/* Header */}
       <div
         style={{
@@ -492,11 +519,11 @@ export default function Lista({ user }: Props) {
                 color: "var(--text)",
               }}
             >
-              Pesquisar
+              Pesquisa
             </label>
             <input
               type="text"
-              placeholder="Nome, código, keywords..."
+              placeholder="Nome, código, vertical..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -515,7 +542,7 @@ export default function Lista({ user }: Props) {
           </div>
         </div>
 
-        {/* Botão reset */}
+        {/* Botão Reset Filtros */}
         {(selectedVertical !== "todas" ||
           selectedHorizontal !== "todas" ||
           searchQuery) && (
@@ -523,255 +550,287 @@ export default function Lista({ user }: Props) {
             onClick={handleResetFilters}
             style={{
               padding: "8px 16px",
-              background: "transparent",
               border: "1px solid var(--stroke)",
               borderRadius: "6px",
-              color: "var(--text)",
+              background: "transparent",
+              color: "var(--muted)",
               fontSize: "0.875rem",
               cursor: "pointer",
             }}
           >
-            <i className="bi bi-x-circle" style={{ marginRight: "8px" }} />
             Limpar filtros
           </button>
         )}
       </div>
 
       {/* Lista de demos */}
-      <div className="card">
-        {demosPaginadas.length === 0 ? (
-          <div
+      {demosFiltradas.length === 0 ? (
+        <div
+          className="card"
+          style={{
+            padding: "48px 24px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "3rem", marginBottom: "16px" }}>
+            {searchQuery || selectedVertical !== "todas" || selectedHorizontal !== "todas"
+              ? "🔍"
+              : "📭"}
+          </div>
+          <h3
             style={{
-              textAlign: "center",
-              padding: "48px 24px",
-              color: "var(--muted)",
+              fontSize: "1.25rem",
+              fontWeight: "700",
+              marginBottom: "8px",
+              color: "var(--text)",
             }}
           >
-            <div style={{ fontSize: "3rem", marginBottom: "16px" }}>
-              {searchQuery || selectedVertical !== "todas" || selectedHorizontal !== "todas"
-                ? "🔍"
-                : "📦"}
-            </div>
-            <h3
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "700",
-                marginBottom: "8px",
-                color: "var(--text)",
-              }}
-            >
-              {searchQuery || selectedVertical !== "todas" || selectedHorizontal !== "todas"
-                ? "Nenhuma demo encontrada"
-                : "Nenhuma demo disponível"}
-            </h3>
-            <p style={{ color: "var(--muted)" }}>
-              {searchQuery || selectedVertical !== "todas" || selectedHorizontal !== "todas"
-                ? "Tenta ajustar os filtros ou termos de pesquisa."
-                : isAdmin
-                ? 'Clica em "Adicionar Demo" para criar a primeira demo.'
-                : "Ainda não há demos disponíveis."}
-            </p>
-          </div>
-        ) : (
-          <>
-            <ul className="list-reset">
-              {demosPaginadas.map((demo) => {
-                const isViewerClickable = !isAdmin && demo.url;
+            {searchQuery || selectedVertical !== "todas" || selectedHorizontal !== "todas"
+              ? "Nenhuma demo encontrada"
+              : "Nenhuma demo disponível"}
+          </h3>
+          <p style={{ color: "var(--muted)" }}>
+            {searchQuery || selectedVertical !== "todas" || selectedHorizontal !== "todas"
+              ? "Tenta ajustar os filtros ou termos de pesquisa."
+              : isAdmin
+              ? 'Clica em "Adicionar Demo" para criar a primeira demo.'
+              : "Ainda não há demos disponíveis."}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div>
+            {demosPaginadas.map((demo) => {
+              const isViewerClickable = isViewer && demo.url && !clienteExpirado;
+              const isDemoBlocked = isViewer && clienteExpirado;
 
-                return (
-                  <li
-                    key={demo.id}
-                    style={{
-                      borderBottom: "1px solid var(--stroke)",
-                      padding: "20px",
-                      cursor: isViewerClickable ? "pointer" : "default",
-                      transition: "background-color 0.2s",
-                    }}
-                    onClick={() => {
-                      if (isViewerClickable) {
-                        handleOpenDemo(demo);
-                      }
-                    }}
-                    onMouseEnter={(e) => {
-                      if (isViewerClickable) {
-                        e.currentTarget.style.backgroundColor = "var(--hover-bg)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (isViewerClickable) {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }
-                    }}
-                  >
+              return (
+                <div
+                  key={demo.id}
+                  className="card"
+                  style={{
+                    marginBottom: "16px",
+                    padding: "20px",
+                    cursor: isViewerClickable ? "pointer" : "default",
+                    transition: "all 0.2s",
+                    position: "relative",
+                    opacity: isDemoBlocked ? 0.5 : 1,
+                  }}
+                  onClick={(e) => {
+                    if (isViewerClickable) {
+                      handleOpenDemo(demo, e);
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    if (isViewerClickable) {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isViewerClickable) {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }
+                  }}
+                >
+                  {}
+                  {isDemoBlocked && (
                     <div
                       style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(255, 255, 255, 0.8)",
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: "16px",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                        zIndex: 1,
+                        borderRadius: "8px",
                       }}
                     >
-                      {/* Info da demo */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            marginBottom: "8px",
-                          }}
-                        >
-                          <h3
-                            style={{
-                              fontSize: "1.125rem",
-                              fontWeight: "600",
-                              color: "var(--text)",
-                              margin: 0,
-                            }}
-                          >
-                            {demo.nome}
-                          </h3>
-                          {getEstadoBadge(demo.estado)}
-                        </div>
+                      <span
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#fee2e2",
+                          color: "#991b1b",
+                          borderRadius: "6px",
+                          fontSize: "0.875rem",
+                          fontWeight: "600",
+                          border: "1px solid #ef4444",
+                        }}
+                      >
+                        Acesso Expirado
+                      </span>
+                    </div>
+                  )}
 
-                        <div
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: "16px",
+                    }}
+                  >
+                    {/* Info da demo */}
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        <h3
                           style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "16px",
-                            fontSize: "0.875rem",
-                            color: "var(--muted)",
+                            fontSize: "1.125rem",
+                            fontWeight: "600",
+                            margin: 0,
+                            color: "var(--text)",
                           }}
                         >
-                          {demo.codigo_projeto && (
-                            <span>
-                              <strong>Código:</strong> {demo.codigo_projeto}
-                            </span>
-                          )}
-                          {demo.vertical && (
-                            <span>
-                              <strong>Vertical:</strong> {demo.vertical}
-                            </span>
-                          )}
-                          {demo.horizontal && (
-                            <span>
-                              <strong>Horizontal:</strong> {demo.horizontal}
-                            </span>
-                          )}
-                        </div>
+                          {demo.nome}
+                        </h3>
+                        {getEstadoBadge(demo.estado)}
                       </div>
 
-                      {/* Ações */}
-                      {isAdmin && (
-                        <div
+                      {demo.descricao && (
+                        <p
                           style={{
-                            display: "flex",
-                            gap: "8px",
-                            flexShrink: 0,
+                            color: "var(--muted)",
+                            fontSize: "0.875rem",
+                            marginBottom: "12px",
+                            lineHeight: "1.5",
                           }}
                         >
-                          {demo.url && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDemo(demo);
-                              }}
-                              style={{
-                                padding: "8px 12px",
-                                background: "var(--primary)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "6px",
-                                fontSize: "0.875rem",
-                                cursor: "pointer",
-                                whiteSpace: "nowrap",
-                              }}
-                              title="Abrir Demo"
-                            >
-                              <i className="bi bi-box-arrow-up-right" />
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/demos/${demo.id}`);
-                            }}
-                            style={{
-                              padding: "8px 12px",
-                              background: "transparent",
-                              border: "1px solid var(--stroke)",
-                              borderRadius: "6px",
-                              color: "var(--text)",
-                              fontSize: "0.875rem",
-                              cursor: "pointer",
-                            }}
-                            title="Ver Detalhes"
-                          >
-                            <i className="bi bi-eye" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/demos/${demo.id}/update`);
-                            }}
-                            style={{
-                              padding: "8px 12px",
-                              background: "transparent",
-                              border: "1px solid var(--stroke)",
-                              borderRadius: "6px",
-                              color: "var(--text)",
-                              fontSize: "0.875rem",
-                              cursor: "pointer",
-                            }}
-                            title="Editar"
-                          >
-                            <i className="bi bi-pencil" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(demo.id, demo.nome);
-                            }}
-                            style={{
-                              padding: "8px 12px",
-                              background: "transparent",
-                              border: "1px solid #dc2626",
-                              borderRadius: "6px",
-                              color: "#dc2626",
-                              fontSize: "0.875rem",
-                              cursor: "pointer",
-                            }}
-                            title="Apagar"
-                          >
-                            <i className="bi bi-trash" />
-                          </button>
-                        </div>
+                          {demo.descricao}
+                        </p>
                       )}
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "16px",
+                          fontSize: "0.875rem",
+                          color: "var(--muted)",
+                        }}
+                      >
+                        {demo.codigo_projeto && (
+                          <span>
+                            <strong>Código:</strong> {demo.codigo_projeto}
+                          </span>
+                        )}
+                        {demo.vertical && (
+                          <span>
+                            <strong>Vertical:</strong> {demo.vertical}
+                          </span>
+                        )}
+                        {demo.horizontal && (
+                          <span>
+                            <strong>Horizontal:</strong> {demo.horizontal}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
 
-            {/* Paginação */}
-            {renderPagination()}
+                    {/* Ações */}
+                    {isAdmin && (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {demo.url && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDemo(demo, e);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              background: "var(--primary)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              fontSize: "0.875rem",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                            }}
+                            title="Abrir Demo"
+                          >
+                            <i className="bi bi-box-arrow-up-right" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/demos/${demo.id}/update`);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            background: "transparent",
+                            border: "1px solid var(--stroke)",
+                            borderRadius: "6px",
+                            color: "var(--text)",
+                            fontSize: "0.875rem",
+                            cursor: "pointer",
+                          }}
+                          title="Editar"
+                        >
+                          <i className="bi bi-pencil" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(demo.id, demo.nome);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            background: "transparent",
+                            border: "1px solid #dc2626",
+                            borderRadius: "6px",
+                            color: "#dc2626",
+                            fontSize: "0.875rem",
+                            cursor: "pointer",
+                          }}
+                          title="Apagar"
+                        >
+                          <i className="bi bi-trash" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Info de paginação */}
-            <div
-              style={{
-                marginTop: "16px",
-                textAlign: "center",
-                fontSize: "0.875rem",
-                color: "var(--muted)",
-                paddingBottom: "16px",
-              }}
-            >
-              A mostrar {startIndex + 1}-{Math.min(endIndex, demosFiltradas.length)} de{" "}
-              {demosFiltradas.length} demos
-            </div>
-          </>
-        )}
-      </div>
+          {/* Paginação */}
+          {renderPagination()}
+
+          {/* Info de paginação */}
+          <div
+            style={{
+              marginTop: "16px",
+              textAlign: "center",
+              fontSize: "0.875rem",
+              color: "var(--muted)",
+              paddingBottom: "16px",
+            }}
+          >
+            A mostrar {startIndex + 1}-{Math.min(endIndex, demosFiltradas.length)} de{" "}
+            {demosFiltradas.length} demos
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -31,6 +31,40 @@ spec:
           value: "1.0.0"
         - name: ENVIRONMENT
           value: "production"
+        
+        - name: CATALOG_URL
+          valueFrom:
+            configMapKeyRef:
+              name: authentication-config
+              key: catalog-url
+        
+        # Microsoft OAuth Configuration
+        - name: MICROSOFT_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: microsoft-oauth-secret
+              key: client-id
+        - name: MICROSOFT_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: microsoft-oauth-secret
+              key: client-secret
+        - name: MICROSOFT_REDIRECT_URI
+          valueFrom:
+            configMapKeyRef:
+              name: authentication-config
+              key: microsoft-redirect-uri
+        - name: MICROSOFT_TENANT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: authentication-config
+              key: microsoft-tenant-id
+        - name: FRONTEND_URL
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-config
+              key: frontend-url
+        
         livenessProbe:
           httpGet:
             path: /health

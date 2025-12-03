@@ -1,6 +1,6 @@
-"""
-Admin CRUD Endpoints
-Tabela: admin (id, nome, email, password_hash, contacto)
+"""Admin CRUD Endpoints
+Tabela: admin (id, nome, email, contacto)
+Autenticação via Microsoft OAuth apenas
 """
 from fastapi import APIRouter, HTTPException, status
 from typing import List, Optional
@@ -22,13 +22,12 @@ class AdminBase(BaseModel):
 
 
 class AdminCreate(AdminBase):
-    password_hash: str  # Já vem hasheado do Catalog
+    pass  # Sem password - OAuth apenas
 
 
 class AdminUpdate(BaseModel):
     nome: Optional[str] = None
     email: Optional[EmailStr] = None
-    password_hash: Optional[str] = None
     contacto: Optional[str] = None
 
 
@@ -81,24 +80,6 @@ def get_admin_by_email(email: str):
     return admins[0]
 
 
-@router.get("/by-email-with-password/{email}")
-def get_admin_with_password(email: str):
-    """
-    Obter admin com password_hash (para autenticação)
-    NOTA: Este endpoint inclui password_hash - usar apenas para autenticação
-    """
-    query = "SELECT id, nome, email, password_hash, contacto FROM admin WHERE email = ?"
-    admins = db.execute_query(query, (email,))
-    
-    if not admins:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Admin com email {email} não encontrado"
-        )
-    
-    return admins[0]
-
-
 @router.post("/", response_model=AdminResponse, status_code=status.HTTP_201_CREATED)
 def create_admin(admin: AdminCreate):
     """Criar novo administrador"""
@@ -107,14 +88,14 @@ def create_admin(admin: AdminCreate):
     admin_id = secrets.token_hex(16)
     
     query = """
-        INSERT INTO admin (id, nome, email, password_hash, contacto)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO admin (id, nome, email, contacto)
+        VALUES (?, ?, ?, ?)
     """
     
     try:
         db.execute_insert(
             query,
-            (admin_id, admin.nome, admin.email, admin.password_hash, admin.contacto)
+            (admin_id, admin.nome, admin.email, admin.contacto)
         )
     except Exception as e:
         # Email duplicado ou outro erro
@@ -155,9 +136,6 @@ def update_admin(admin_id: str, admin: AdminUpdate):
         updates.append("email = ?")
         params.append(admin.email)
     
-    if admin.password_hash is not None:
-        updates.append("password_hash = ?")
-        params.append(admin.password_hash)
     
     if admin.contacto is not None:
         updates.append("contacto = ?")

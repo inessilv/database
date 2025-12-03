@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { demoService } from "../services/demoService";
 import type { Demo, DemoCreate, DemoUpdate } from "../types/Demo";
+import { getAuthUser } from "../utils/cookies";
 
 type User = { id: string; name: string; role: "admin" | "viewer" };
 
@@ -37,8 +38,8 @@ interface UseDemosReturn {
 export function useDemos(): UseDemosReturn {
   // Obter user de localStorage
   const getUser = (): User | null => {
-    const raw = localStorage.getItem("app_user");
-    return raw ? (JSON.parse(raw) as User) : null;
+    const user = getAuthUser();
+    return user;
   };
 
   const [demos, setDemos] = useState<Demo[]>([]);
@@ -54,7 +55,15 @@ export function useDemos(): UseDemosReturn {
 
     try {
       const data = await demoService.getAll();
-      setDemos(data);
+      
+      // Filtrar demos inativas/manutenção para viewers (clientes)
+      const user = getUser();
+      if (user && user.role === "viewer") {
+        const demosAtivas = data.filter((demo) => demo.estado === "ativa");
+        setDemos(demosAtivas);
+      } else {
+        setDemos(data);
+      }
     } catch (err: any) {
       console.error("Erro ao carregar demos:", err);
       setError(err.message || "Erro ao carregar demos");

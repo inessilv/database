@@ -17,7 +17,6 @@ class ClienteBase(BaseModel):
 
 
 class ClienteCreate(ClienteBase):
-    password_hash: str
     data_expiracao: str  # ISO format: "2025-12-31"
     criado_por: str  # admin_id
 
@@ -25,7 +24,6 @@ class ClienteCreate(ClienteBase):
 class ClienteUpdate(BaseModel):
     nome: Optional[str] = None
     email: Optional[EmailStr] = None
-    password_hash: Optional[str] = None
 
 
 class ClienteResponse(ClienteBase):
@@ -106,24 +104,6 @@ def get_cliente_by_email(email: str):
     return clientes[0]
 
 
-@router.get("/by-email-with-password/{email}")
-def get_cliente_with_password(email: str):
-    """
-    Obter cliente com password_hash (para autenticação)
-    NOTA: Inclui password_hash - usar apenas para autenticação
-    """
-    query = "SELECT * FROM cliente WHERE email = ?"
-    clientes = db.execute_query(query, (email,))
-    
-    if not clientes:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Cliente com email {email} não encontrado"
-        )
-    
-    return clientes[0]
-
-
 @router.post("/", response_model=ClienteResponse, status_code=status.HTTP_201_CREATED)
 def create_cliente(cliente: ClienteCreate):
     """Criar novo cliente"""
@@ -131,14 +111,14 @@ def create_cliente(cliente: ClienteCreate):
     cliente_id = secrets.token_hex(16)
     
     query = """
-        INSERT INTO cliente (id, nome, email, password_hash, data_expiracao, criado_por)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO cliente (id, nome, email, data_expiracao, criado_por)
+        VALUES (?, ?, ?, ?, ?)
     """
     
     try:
         db.execute_insert(
             query,
-            (cliente_id, cliente.nome, cliente.email, cliente.password_hash,
+            (cliente_id, cliente.nome, cliente.email,
              cliente.data_expiracao, cliente.criado_por)
         )
     except Exception as e:
@@ -178,10 +158,6 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
         updates.append("email = ?")
         params.append(cliente.email)
     
-    if cliente.password_hash is not None:
-        updates.append("password_hash = ?")
-        params.append(cliente.password_hash)
-    
     
     if not updates:
         return get_cliente(cliente_id)
@@ -203,3 +179,30 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
         )
     
     return get_cliente(cliente_id)
+
+
+@router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_cliente_access(cliente_id: str):
+    """Revogar acesso do cliente (expira imediatamente)"""
+    cliente_exists = db.execute_query(
+        "SELECT id FROM cliente WHERE id = ?",
+        (cliente_id,)
+    )
+    
+    if not cliente_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Cliente {cliente_id} não encontrado"
+        )
+    
+    # Definir data_expiracao como datetime.now (expira imediatamente)
+    query = "UPDATE cliente SET data_expiracao = datetime('now') WHERE id = ?"
+    
+    try:
+        db.execute_update(query, (cliente_id,))
+        return None
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao revogar acesso: {str(e)}"
+        )

@@ -4,7 +4,7 @@ Endpoints para gestão de administradores
 """
 from fastapi import APIRouter, HTTPException, status
 from typing import List
-from app.models.admin import AdminCreate, AdminUpdate, AdminResponse, AdminLogin
+from app.models.admin import AdminCreate, AdminUpdate, AdminResponse
 from app.services.admin_service import admin_service
 
 
@@ -71,7 +71,6 @@ async def get_admin_by_email(email: str):
 async def create_admin(admin: AdminCreate):
     """
     Criar novo administrador
-    Password será automaticamente hasheada
     """
     try:
         return await admin_service.create_admin(admin)
@@ -91,7 +90,6 @@ async def create_admin(admin: AdminCreate):
 async def update_admin(admin_id: str, admin: AdminUpdate):
     """
     Atualizar administrador
-    Se password fornecida, será automaticamente hasheada
     """
     try:
         return await admin_service.update_admin(admin_id, admin)
@@ -131,25 +129,3 @@ async def delete_admin(admin_id: str):
             detail=f"Erro ao apagar administrador: {str(e)}"
         )
 
-
-@router.post("/login", response_model=AdminResponse)
-async def login_admin(credentials: AdminLogin):
-    """
-    Login de administrador
-    Verifica credenciais e retorna dados do admin se válidas
-    """
-    try:
-        return await admin_service.verify_admin_credentials(
-            credentials.email, 
-            credentials.password
-        )
-    except Exception as e:
-        if "inválidas" in str(e).lower() or "credenciais" in str(e).lower():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Credenciais inválidas"
-            )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro no login: {str(e)}"
-        )

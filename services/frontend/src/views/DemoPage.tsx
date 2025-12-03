@@ -222,7 +222,7 @@ export default function DemoPage({ user }: Props) {
     setLoading(true);
 
     try {
-      const demoData: Omit<DemoCreate, "criado_por"> = {
+      const demoData: DemoCreate = {
         nome: formData.nome.trim(),
         codigo_projeto: formData.codigo_projeto.trim().toUpperCase(),
         vertical: formData.vertical.trim(),
@@ -234,6 +234,7 @@ export default function DemoPage({ user }: Props) {
         comercial_contacto: formData.comercial_contacto.trim(),
         comercial_foto_url: formData.comercial_foto_url,
         estado: "ativa", // Sempre ativa ao criar
+        criado_por: user.id, // Admin que está a criar
       };
 
       const created = await createDemo(demoData);

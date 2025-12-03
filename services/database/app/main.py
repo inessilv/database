@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import admin
+from fastapi import HTTPException
+from app.db.connection import DatabaseConnection as db
 
 
 app = FastAPI(
@@ -140,3 +142,15 @@ async def shutdown_event():
     from app.db.connection import DatabaseConnection
     DatabaseConnection.close_connection()
     print("🛑 Database Service Stopped")
+
+
+@app.get("/db/query")
+async def execute_query(sql: str):
+    """Endpoint genérico para queries SQL - usado pelo Metrics Exporter"""
+    
+    try:
+        # Executar query usando o DatabaseConnection existente
+        results = db.execute_query(sql)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

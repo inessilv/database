@@ -11,12 +11,14 @@ interface ClienteCardProps {
   cliente: ClienteComStatus;
   onEdit: (id: string) => void;
   onViewDetails: (id: string) => void;
+  onRevokeAccess?: (id: string) => void;
 }
 
-export default function ClienteCard({
+export function ClienteCard({
   cliente,
   onEdit,
   onViewDetails,
+  onRevokeAccess,
 }: ClienteCardProps) {
   /**
    * Configuração dos badges de estado
@@ -172,6 +174,21 @@ export default function ClienteCard({
           >
             Editar
           </button>
+          {onRevokeAccess && (
+            <button
+              className="button"
+              style={{
+                backgroundColor: "var(--danger)",
+                borderColor: "var(--danger)",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRevokeAccess(cliente.id);
+              }}
+            >
+              Revogar Acesso
+            </button>
+          )}
         </div>
       </div>
     </li>

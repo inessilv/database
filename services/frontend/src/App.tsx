@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { getAuthToken, getAuthUser, setAuthToken, setAuthUser, clearAuth } from "./utils/cookies";
 
 import Navbar from "./components/Navbar";
 import Login from "./views/Login";
+import AuthCallback from "./views/AuthCallback";
 import Lista from "./views/Lista";
 import Detalhe from "./views/Detalhe";
 import EditDemo from "./views/EditDemo";
@@ -14,7 +16,7 @@ import Analytics from "./views/Analytics";
 
 export type Role = "admin" | "viewer";
 export type User = { 
-  id: string;      // ⬅️ ADICIONADO
+  id: string;
   name: string; 
   role: Role 
 };
@@ -31,48 +33,47 @@ export default function App() {
     const toggleTheme = () =>
         setTheme((t) => (t === "dark" ? "light" : "dark"));
 
-    // sessão
+    // sessão - use cookies instead of localStorage
     const [user, setUser] = useState<User | null>(() => {
-        const raw = localStorage.getItem("app_user");
-        return raw ? (JSON.parse(raw) as User) : null;
+        return getAuthUser();
     });
+
+    // Check for existing auth token on startup
+    useEffect(() => {
+        const token = getAuthToken();
+        if (token && !user) {
+            // Token exists but no user - might have refreshed after OAuth
+            // Try to restore user
+            const savedUser = getAuthUser();
+            if (savedUser) {
+                try {
+                    setUser(savedUser);
+                } catch (e) {
+                    console.error("Failed to restore user session", e);
+                    clearAuth();
+                }
+            }
+        }
+    }, []);
 
     const logged = !!user;
     const isAdmin = user?.role === "admin";
 
-    // login "local" (admin/admin, viewer/viewer)
-    const handleLogin = (username: string, password: string) => {
-        const u = username.trim().toLowerCase();
-        const p = password.trim();
-        
-        if (u === "admin" && p === "admin") {
-            const me: User = { 
-                id: "admin001",  // ⬅️ ID MOCK
-                name: "admin001", 
-                role: "admin" 
-            };
-            setUser(me);
-            localStorage.setItem("app_user", JSON.stringify(me));
-            return true;
-        }
-        
-        if (u === "viewer" && p === "viewer") {
-            const me: User = { 
-                id: "viewer-mock-id",  // ⬅️ ID MOCK
-                name: "viewer", 
-                role: "viewer" 
-            };
-            setUser(me);
-            localStorage.setItem("app_user", JSON.stringify(me));
-            return true;
-        }
-        
-        return false;
-    };
-
     const handleLogout = () => {
         setUser(null);
-        localStorage.removeItem("app_user");
+        clearAuth();
+    };
+
+    // Microsoft OAuth callback handler
+    const handleMicrosoftCallback = (token: string, userInfo: any) => {
+        const me: User = {
+            id: userInfo.id || userInfo.email || "microsoft-user",
+            name: userInfo.name || userInfo.email,
+            role: userInfo.role || "viewer"
+        };
+        setUser(me);
+        setAuthUser(me);
+        setAuthToken(token);
     };
 
     return (
@@ -93,9 +94,15 @@ export default function App() {
                         logged ? (
                             <Navigate to="/demos" replace />
                         ) : (
-                            <Login onLogin={handleLogin} />
+                            <Login />
                         )
                     }
+                />
+
+                {/* Microsoft OAuth Callback */}
+                <Route
+                    path="/auth/callback"
+                    element={<AuthCallback onMicrosoftCallback={handleMicrosoftCallback} />}
                 />
 
                 {/* Root */}
@@ -199,7 +206,7 @@ export default function App() {
                     path="/analytics"
                     element={
                         logged && isAdmin ? (
-                            <Analytics />
+                            <Analytics user={user!} />
                         ) : (
                             <Navigate to="/login" replace />
                         )

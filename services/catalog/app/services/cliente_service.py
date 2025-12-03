@@ -1,20 +1,15 @@
 """
 Cliente Service
 Lógica de negócio para Clientes
+Autenticação via Microsoft OAuth apenas
 """
-from typing import List, Dict, Any
+from typing import List
 from app.models.cliente import ClienteCreate, ClienteUpdate, ClienteResponse
 from app.services.database_client import db_client
-import hashlib
 
 
 class ClienteService:
     """Service para gestão de clientes"""
-    
-    @staticmethod
-    def _hash_password(password: str) -> str:
-        """Hash password usando SHA256"""
-        return hashlib.sha256(password.encode()).hexdigest()
     
     async def get_all_clientes(self) -> List[ClienteResponse]:
         """Obter todos os clientes"""
@@ -42,49 +37,20 @@ class ClienteService:
         return ClienteResponse(**cliente)
     
     async def create_cliente(self, cliente: ClienteCreate) -> ClienteResponse:
-        """
-        Criar novo cliente
-        Password é automaticamente hasheada
-        """
+        """Criar novo cliente"""
         cliente_data = cliente.model_dump()
-        
-        # Hash da password
-        cliente_data['password_hash'] = self._hash_password(cliente_data.pop('password'))
-        
         created = await db_client.create_cliente(cliente_data)
         return ClienteResponse(**created)
     
     async def update_cliente(self, cliente_id: str, cliente: ClienteUpdate) -> ClienteResponse:
-        """
-        Atualizar cliente
-        Se password fornecida, é automaticamente hasheada
-        """
+        """Atualizar cliente"""
         update_data = cliente.model_dump(exclude_none=True)
-        
-        # Se password fornecida, fazer hash
-        if 'password' in update_data:
-            update_data['password_hash'] = self._hash_password(update_data.pop('password'))
-        
         updated = await db_client.update_cliente(cliente_id, update_data)
         return ClienteResponse(**updated)
     
-
-    async def verify_cliente_credentials(self, email: str, password: str) -> ClienteResponse:
-        """
-        Verificar credenciais de login
-        Retorna dados do cliente se credenciais válidas
-        """
-        # Obter cliente com password
-        cliente = await db_client.get_cliente_with_password(email)
-        
-        # Verificar password
-        password_hash = self._hash_password(password)
-        if cliente.get('password_hash') != password_hash:
-            raise Exception("Credenciais inválidas")
-        
-        # Remover password_hash antes de retornar
-        cliente.pop('password_hash', None)
-        return ClienteResponse(**cliente)
+    async def revoke_access(self, cliente_id: str) -> None:
+        """Revogar acesso do cliente (expira imediatamente)"""
+        await db_client.delete_cliente(cliente_id)
 
 
 # Singleton instance

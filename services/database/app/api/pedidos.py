@@ -180,7 +180,21 @@ def get_pedido(pedido_id: str):
     return result
 
 
-@router.post("/create", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
+@router.get("/by-cliente/{cliente_id}", response_model=List[PedidoResponseCliente])
+def get_pedidos_by_cliente(cliente_id: str):
+    """
+    Listar pedidos de um cliente específico
+    Usado para verificar se cliente já tem pedido pendente
+    """
+    query = """
+        SELECT * FROM pedido 
+        WHERE cliente_id = ? 
+        ORDER BY criado_em DESC
+    """
+    pedidos = db.execute_query(query, (cliente_id.strip(),))
+    return pedidos
+
+@router.post("/create", response_model=PedidoResponseCliente, status_code=status.HTTP_201_CREATED)
 def create_pedido(pedido: PedidoCreate):
     """Criar novo pedido"""
     import secrets

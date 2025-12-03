@@ -55,10 +55,6 @@ class DatabaseClient:
         """GET /db/admin/by-email/{email}"""
         return await self._request("GET", f"/db/admin/by-email/{email}")
     
-    async def get_admin_with_password(self, email: str) -> Dict[str, Any]:
-        """GET /db/admin/by-email-with-password/{email} - Para autenticação"""
-        return await self._request("GET", f"/db/admin/by-email-with-password/{email}")
-    
     async def create_admin(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """POST /db/admin/"""
         return await self._request("POST", "/db/admin/", json=data)
@@ -95,10 +91,6 @@ class DatabaseClient:
         """GET /db/clientes/by-email/{email}"""
         return await self._request("GET", f"/db/clientes/by-email/{email}")
     
-    async def get_cliente_with_password(self, email: str) -> Dict[str, Any]:
-        """GET /db/clientes/by-email-with-password/{email} - Para autenticação"""
-        return await self._request("GET", f"/db/clientes/by-email-with-password/{email}")
-    
     async def create_cliente(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """POST /db/clientes/"""
         return await self._request("POST", "/db/clientes/", json=data)
@@ -106,6 +98,10 @@ class DatabaseClient:
     async def update_cliente(self, cliente_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """PUT /db/clientes/{id}"""
         return await self._request("PUT", f"/db/clientes/{cliente_id}", json=data)
+    
+    async def delete_cliente(self, cliente_id: str) -> None:
+        """DELETE /db/clientes/{id} - Revoga acesso (expira imediatamente)"""
+        await self._request("DELETE", f"/db/clientes/{cliente_id}")
     
     
     # ========================================================================
@@ -168,9 +164,17 @@ class DatabaseClient:
         """GET /db/pedidos/{id}"""
         return await self._request("GET", f"/db/pedidos/{pedido_id}")
     
+    async def get_pedido_by_cliente(self, cliente_id: str) -> Dict[str, Any]:
+        """GET /db/pedidos/by-cliente/{cliente_id} - retorna um pedido"""
+        return await self._request("GET", f"/db/pedidos/by-cliente/{cliente_id}")
+    
+    async def get_pedidos_by_cliente(self, cliente_id: str) -> List[Dict[str, Any]]:
+        """GET /db/pedidos/by-cliente/{cliente_id} - retorna lista de pedidos"""
+        return await self._request("GET", f"/db/pedidos/by-cliente/{cliente_id}")
+    
     async def create_pedido(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """POST /db/pedidos/"""
-        return await self._request("POST", "/db/pedidos/", json=data)
+        """POST /db/pedidos/create"""
+        return await self._request("POST", "/db/pedidos/create", json=data)
     
     async def approve_pedido(self, pedido_id: str, admin_id: str) -> Dict[str, Any]:
         """POST /db/pedidos/{id}/approve - TRANSACTION"""

@@ -24,7 +24,6 @@ export interface Cliente {
 export interface ClienteCreate {
   nome: string;
   email: string;
-  password: string;         // Será hashado no backend
   data_registo: string;     // ISO datetime
   data_expiracao: string;   // ISO datetime
   criado_por: string;       // ID do admin que está criando
@@ -37,7 +36,6 @@ export interface ClienteCreate {
 export interface ClienteUpdate {
   nome?: string;
   email?: string;
-  password?: string;
   data_registo?: string;
   data_expiracao?: string;
 }
