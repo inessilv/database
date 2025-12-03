@@ -173,6 +173,29 @@ FROM cliente c
 LEFT JOIN log l ON c.id = l.cliente_id
 GROUP BY c.id, c.nome, c.email;
 
+
+-- ============================================================================
+-- MÉTRICAS DE TEMPO - SESSÕES DE DEMOS
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS demo_sessions (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    session_id TEXT UNIQUE NOT NULL,
+    cliente_id TEXT NOT NULL,
+    demo_id TEXT NOT NULL,
+    timestamp_inicio TEXT NOT NULL,
+    timestamp_fim TEXT,
+    duracao_segundos INTEGER,
+    created_at TEXT DEFAULT (datetime('now')),
+    
+    FOREIGN KEY (cliente_id) REFERENCES cliente(id) ON DELETE CASCADE,
+    FOREIGN KEY (demo_id) REFERENCES demo(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_demo_sessions_cliente ON demo_sessions(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_demo_sessions_demo ON demo_sessions(demo_id);
+CREATE INDEX IF NOT EXISTS idx_demo_sessions_inicio ON demo_sessions(timestamp_inicio);
+
 -- ============================================================================
 -- END
 -- ============================================================================

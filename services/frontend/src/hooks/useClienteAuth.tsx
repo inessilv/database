@@ -21,6 +21,7 @@ interface UseClienteAuthReturn {
   diasRestantes: number | null;
   status: "ativo" | "expira_breve" | "expirado" | "futuro";
   temPedidoPendente: boolean;
+  temPedidoRejeitado: boolean;
   criarPedidoRenovacao: () => Promise<void>;
   refreshCliente: () => Promise<void>;
 }

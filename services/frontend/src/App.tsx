@@ -16,7 +16,7 @@ import Analytics from "./views/Analytics";
 
 export type Role = "admin" | "viewer";
 export type User = { 
-  id: string;      // ⬅️ ADICIONADO
+  id: string;
   name: string; 
   role: Role 
 };
@@ -67,7 +67,7 @@ export default function App() {
     // Microsoft OAuth callback handler
     const handleMicrosoftCallback = (token: string, userInfo: any) => {
         const me: User = {
-            id: userInfo.id || userInfo.email || "microsoft-user",  // Usar ID da BD
+            id: userInfo.id || userInfo.email || "microsoft-user",
             name: userInfo.name || userInfo.email,
             role: userInfo.role || "viewer"
         };
@@ -206,7 +206,7 @@ export default function App() {
                     path="/analytics"
                     element={
                         logged && isAdmin ? (
-                            <Analytics />
+                            <Analytics user={user!} />
                         ) : (
                             <Navigate to="/login" replace />
                         )

@@ -179,3 +179,30 @@ def update_cliente(cliente_id: str, cliente: ClienteUpdate):
         )
     
     return get_cliente(cliente_id)
+
+
+@router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_cliente_access(cliente_id: str):
+    """Revogar acesso do cliente (expira imediatamente)"""
+    cliente_exists = db.execute_query(
+        "SELECT id FROM cliente WHERE id = ?",
+        (cliente_id,)
+    )
+    
+    if not cliente_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Cliente {cliente_id} não encontrado"
+        )
+    
+    # Definir data_expiracao como datetime.now (expira imediatamente)
+    query = "UPDATE cliente SET data_expiracao = datetime('now') WHERE id = ?"
+    
+    try:
+        db.execute_update(query, (cliente_id,))
+        return None
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao revogar acesso: {str(e)}"
+        )

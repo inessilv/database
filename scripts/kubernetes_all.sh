@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          E-Catalog - Deploy Completo (Kubernetes)         ║${NC}"
+echo -e "${BLUE}║          E-Catalog - Deploy Completo (Kubernetes)          ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -60,6 +60,11 @@ echo -e "${BLUE}  → Frontend...${NC}"
 cd services/frontend && echo "VITE_API_URL=http://$(minikube ip):30800" > .env && docker build -t ecatalog/frontend:latest . && cd ../..
 echo -e "${GREEN}  ✓ Frontend image built${NC}"
 echo ""
+
+echo -e "${BLUE}  → Metrics Exporter...${NC}"
+cd services/metrics-exporter && docker build -t ecatalog/metrics-exporter:latest . && cd ../..
+echo -e "${GREEN}  ✓ Metrics Exporter image built${NC}"
+
 
 # Store Minikube IP for later use
 MINIKUBE_IP=$(minikube ip)
@@ -129,6 +134,10 @@ kubectl apply -f kubernetes/services/authentication-service.yaml
 echo -e "${BLUE}  → Catalog Service...${NC}"
 kubectl apply -f kubernetes/deployments/catalog-deployment.yaml
 kubectl apply -f kubernetes/services/catalog-service.yaml
+
+echo -e "${BLUE}  → Metrics Exporter Service...${NC}"
+kubectl apply -f kubernetes/deployments/metrics-exporter-deployment.yaml
+kubectl apply -f kubernetes/services/metrics-exporter-service.yaml
 
 echo ""
 

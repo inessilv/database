@@ -2,56 +2,62 @@
  * ConfirmModal Component
  * 
  * Modal genérico para confirmar ações com design moderno
- * Aparece centrado no ecrã com backdrop escurecido
+ * Aparece SEMPRE centrado no viewport (não na página)
+ * Alinhado com o styling das outras views (Clientes, Demos, etc.)
  */
 
 import React from "react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  onCancel?: () => void;
   onConfirm: () => void;
   title: string;
   message: string;
   confirmText?: string;
   cancelText?: string;
-  confirmColor?: "green" | "red" | "blue";
+  confirmVariant?: "primary" | "danger" | "success";
   loading?: boolean;
 }
 
 export default function ConfirmModal({
   isOpen,
   onClose,
+  onCancel,
   onConfirm,
   title,
   message,
   confirmText = "Confirmar",
   cancelText = "Cancelar",
-  confirmColor = "green",
+  confirmVariant = "primary",
   loading = false,
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
+  // Handler para cancelar - usa onCancel se fornecido, senão onClose
+  const handleCancel = onCancel || onClose || (() => {});
+
   /**
-   * Estilos do botão de confirmação baseado na cor
+   * Estilos do botão de confirmação baseado na variante
    */
   const getConfirmButtonStyle = (): React.CSSProperties => {
-    const colors = {
-      green: {
-        backgroundColor: "#10b981",
-        color: "white",
-      },
-      red: {
-        backgroundColor: "#ef4444",
-        color: "white",
-      },
-      blue: {
+    const variants = {
+      primary: {
         backgroundColor: "var(--primary)",
-        color: "white",
+        borderColor: "var(--primary)",
+      },
+      danger: {
+        backgroundColor: "var(--danger)",
+        borderColor: "var(--danger)",
+      },
+      success: {
+        backgroundColor: "var(--success)",
+        borderColor: "var(--success)",
       },
     };
 
-    return colors[confirmColor];
+    return variants[confirmVariant];
   };
 
   /**
@@ -59,7 +65,7 @@ export default function ConfirmModal({
    */
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !loading) {
-      onClose();
+      handleCancel();
     }
   };
 
@@ -69,13 +75,13 @@ export default function ConfirmModal({
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !loading) {
-        onClose();
+        handleCancel();
       }
     };
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      // Prevenir scroll do body
+      // Prevenir scroll do body quando modal aberto
       document.body.style.overflow = "hidden";
     }
 
@@ -87,159 +93,154 @@ export default function ConfirmModal({
 
   return (
     <>
-      {/* Backdrop com animação de fade-in */}
+      {/* Backdrop - overlay de fundo escuro com blur */}
       <div
         style={{
           position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(4px)",
+          inset: 0, // shorthand para top, right, bottom, left = 0
+          backgroundColor: "rgba(0, 0, 0, 0.65)",
+          backdropFilter: "blur(5px)",
+          WebkitBackdropFilter: "blur(5px)", // Safari support
           zIndex: 9998,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           animation: "fadeIn 0.2s ease-out",
         }}
         onClick={handleBackdropClick}
-      />
-
-      {/* Modal centrado com animação de scale */}
-      <div
-        style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          zIndex: 9999,
-          width: "90%",
-          maxWidth: "480px",
-          animation: "scaleIn 0.3s ease-out",
-        }}
-        onClick={(e) => e.stopPropagation()}
       >
+        {/* Modal - centralizado no viewport */}
         <div
-          className="card"
           style={{
-            padding: 0,
-            backgroundColor: "var(--bg)",
-            border: "1px solid var(--stroke)",
-            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            position: "relative",
+            width: "90%",
+            maxWidth: "500px",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            animation: "scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div
+            className="card"
             style={{
-              padding: "24px 24px 20px 24px",
-              borderBottom: "1px solid var(--stroke)",
+              margin: 0,
+              padding: 0,
+              backgroundColor: "var(--bg)",
+              border: "1px solid var(--stroke)",
+              borderRadius: "14px",
+              boxShadow:
+                "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
             }}
           >
-            <h3
+            {/* Header */}
+            <div
               style={{
-                fontSize: "1.25rem",
-                fontWeight: "700",
-                color: "var(--text)",
-                margin: 0,
+                padding: "24px 28px 20px 28px",
+                borderBottom: "1px solid var(--stroke)",
+                backgroundColor: "var(--bg-2)",
               }}
             >
-              {title}
-            </h3>
-          </div>
+              <h3
+                style={{
+                  fontSize: "1.3rem",
+                  fontWeight: "700",
+                  color: "var(--text)",
+                  margin: 0,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {title}
+              </h3>
+            </div>
 
-          {/* Body */}
-          <div
-            style={{
-              padding: "24px",
-            }}
-          >
-            <p
+            {/* Body */}
+            <div
               style={{
-                fontSize: "0.9375rem",
-                lineHeight: "1.6",
-                color: "var(--text)",
-                margin: 0,
+                padding: "28px",
               }}
             >
-              {message}
-            </p>
-          </div>
+              <p
+                style={{
+                  fontSize: "0.95rem",
+                  lineHeight: "1.65",
+                  color: "var(--muted)",
+                  margin: 0,
+                }}
+              >
+                {message}
+              </p>
+            </div>
 
-          {/* Footer com ações */}
-          <div
-            style={{
-              padding: "16px 24px 24px 24px",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "12px",
-            }}
-          >
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="btn-ghost"
+            {/* Footer com botões de ação */}
+            <div
               style={{
-                padding: "10px 20px",
-                fontSize: "0.9375rem",
-                fontWeight: "600",
-                opacity: loading ? 0.5 : 1,
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              {cancelText}
-            </button>
-
-            <button
-              onClick={onConfirm}
-              disabled={loading}
-              style={{
-                padding: "10px 24px",
-                fontSize: "0.9375rem",
-                fontWeight: "600",
-                border: "none",
-                borderRadius: "8px",
-                cursor: loading ? "not-allowed" : "pointer",
-                transition: "all 0.2s ease",
+                padding: "18px 28px 26px 28px",
                 display: "flex",
+                justifyContent: "flex-end",
                 alignItems: "center",
-                gap: "8px",
-                opacity: loading ? 0.7 : 1,
-                ...getConfirmButtonStyle(),
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.opacity = "0.9";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.opacity = "1";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }
+                gap: "12px",
+                borderTop: "1px solid var(--stroke)",
+                backgroundColor: "var(--bg)",
               }}
             >
-              {loading ? (
-                <>
+              {/* Botão Cancelar */}
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="btn-outline"
+                style={{
+                  padding: "11px 22px",
+                  fontSize: "0.95rem",
+                  fontWeight: "600",
+                  borderRadius: "10px",
+                  opacity: loading ? 0.5 : 1,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {cancelText}
+              </button>
+
+              {/* Botão Confirmar */}
+              <button
+                onClick={onConfirm}
+                disabled={loading}
+                className="button"
+                style={{
+                  padding: "11px 26px",
+                  fontSize: "0.95rem",
+                  fontWeight: "600",
+                  borderRadius: "10px",
+                  opacity: loading ? 0.5 : 1,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  ...getConfirmButtonStyle(),
+                }}
+              >
+                {loading && (
                   <div
                     style={{
                       width: "16px",
                       height: "16px",
-                      border: "2px solid white",
-                      borderTopColor: "transparent",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                      borderTop: "2px solid white",
                       borderRadius: "50%",
                       animation: "spin 0.6s linear infinite",
                     }}
                   />
-                  A processar...
-                </>
-              ) : (
-                confirmText
-              )}
-            </button>
+                )}
+                {confirmText}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* CSS das animações */}
+      {/* CSS das animações - incluído inline no componente */}
       <style>{`
         @keyframes fadeIn {
           from {
@@ -253,11 +254,11 @@ export default function ConfirmModal({
         @keyframes scaleIn {
           from {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(0.95);
+            transform: scale(0.92);
           }
           to {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: scale(1);
           }
         }
 

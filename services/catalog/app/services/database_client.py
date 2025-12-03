@@ -99,6 +99,10 @@ class DatabaseClient:
         """PUT /db/clientes/{id}"""
         return await self._request("PUT", f"/db/clientes/{cliente_id}", json=data)
     
+    async def delete_cliente(self, cliente_id: str) -> None:
+        """DELETE /db/clientes/{id} - Revoga acesso (expira imediatamente)"""
+        await self._request("DELETE", f"/db/clientes/{cliente_id}")
+    
     
     # ========================================================================
     # DEMOS
@@ -161,7 +165,11 @@ class DatabaseClient:
         return await self._request("GET", f"/db/pedidos/{pedido_id}")
     
     async def get_pedido_by_cliente(self, cliente_id: str) -> Dict[str, Any]:
-        """GET /db/pedidos/{id}"""
+        """GET /db/pedidos/by-cliente/{cliente_id} - retorna um pedido"""
+        return await self._request("GET", f"/db/pedidos/by-cliente/{cliente_id}")
+    
+    async def get_pedidos_by_cliente(self, cliente_id: str) -> List[Dict[str, Any]]:
+        """GET /db/pedidos/by-cliente/{cliente_id} - retorna lista de pedidos"""
         return await self._request("GET", f"/db/pedidos/by-cliente/{cliente_id}")
     
     async def create_pedido(self, data: Dict[str, Any]) -> Dict[str, Any]:

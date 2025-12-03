@@ -6,10 +6,16 @@ from fastapi import APIRouter, HTTPException, status
 from typing import List
 from app.models.demo import DemoCreate, DemoUpdate, DemoResponse
 from app.services.demo_service import demo_service
+from pydantic import BaseModel
+from app.models.log import LogCreate
+from app.services.log_service import log_service
 
 
 router = APIRouter()
 
+class OpenDemoRequest(BaseModel):
+    """Request para abrir demo"""
+    cliente_id: str
 
 # ============================================================================
 # ENDPOINTS PÚBLICOS
@@ -87,6 +93,51 @@ async def get_demo(demo_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao obter demo: {str(e)}"
+        )
+
+
+@router.post("/{demo_id}/open", status_code=status.HTTP_201_CREATED)
+async def open_demo(demo_id: str, request: OpenDemoRequest):
+    """
+    Registar que um cliente abriu uma demo
+    
+    Cria log do tipo 'demo_aberta' com cliente_id e demo_id
+    """
+    try:
+        # Verificar se demo existe
+        demo = await demo_service.get_demo(demo_id)
+        if not demo:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Demo {demo_id} não encontrada"
+            )
+        
+        # Criar log de demo_aberta
+        log = LogCreate(
+            tipo="demo_aberta",
+            cliente_id=request.cliente_id,
+            demo_id=demo_id,
+            mensagem=f"Cliente abriu demo: {demo.nome}"
+        )
+        
+        created_log = await log_service.create_log(log)
+        
+        return {
+            "message": "Demo aberta registada com sucesso",
+            "log_id": created_log.id,
+            "demo": {
+                "id": demo.id,
+                "nome": demo.nome,
+                "url": demo.url
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao registar abertura de demo: {str(e)}"
         )
 
 

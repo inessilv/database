@@ -55,7 +55,15 @@ export function useDemos(): UseDemosReturn {
 
     try {
       const data = await demoService.getAll();
-      setDemos(data);
+      
+      // Filtrar demos inativas/manutenção para viewers (clientes)
+      const user = getUser();
+      if (user && user.role === "viewer") {
+        const demosAtivas = data.filter((demo) => demo.estado === "ativa");
+        setDemos(demosAtivas);
+      } else {
+        setDemos(data);
+      }
     } catch (err: any) {
       console.error("Erro ao carregar demos:", err);
       setError(err.message || "Erro ao carregar demos");

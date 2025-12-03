@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { demoService } from "../services/demoService";
 import type { Demo } from "../types/Demo";
+import { getAuthUser } from "../utils/cookies";
 
 type User = { id: string; name: string; role: "admin" | "viewer" };
 
@@ -271,9 +272,43 @@ export default function Detalhe({ user }: Props) {
     navigate(`/demos/${demo.id}/update`);
   };
 
-  const handleOpenDemo = () => {
+  const handleOpenDemo = async () => {
     if (!demo?.url) return;
-    window.open(demo.url, "_blank");
+    
+    try {
+      // Obter cliente_id do user logado
+      const user = getAuthUser();
+      if (!user || !user.id) {
+        alert("Erro: utilizador não autenticado");
+        return;
+      }
+      
+      // Registar abertura da demo no backend
+      const CATALOG_URL = window.location.origin.replace(':30300', ':30800');
+      const response = await fetch(`${CATALOG_URL}/api/demos/${demo.id}/open`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cliente_id: user.id
+        })
+      });
+      
+      if (!response.ok) {
+        console.error("Erro ao registar abertura de demo:", await response.text());
+      } else {
+        console.log("Demo aberta registada com sucesso");
+      }
+      
+      // Abrir demo em nova tab
+      window.open(demo.url, "_blank");
+      
+    } catch (error) {
+      console.error("Erro ao abrir demo:", error);
+      // Abre demo mesmo se o log falhar
+      window.open(demo.url, "_blank");
+    }
   };
 
   if (loading) {

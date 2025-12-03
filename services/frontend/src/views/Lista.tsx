@@ -12,6 +12,7 @@ import { useDemos } from "../hooks/useDemos";
 import { useClienteAuth } from "../hooks/useClienteAuth";
 import ExpirationBanner from "../components/ExpirationBanner";
 import type { Demo } from "../types/Demo";
+import { getAuthUser } from "../utils/cookies";
 
 type User = { id: string; name: string; role: "admin" | "viewer" };
 
@@ -33,13 +34,12 @@ export default function Lista({ user }: Props) {
     refreshDemos,
   } = useDemos();
 
-  // ✅ NOVO: Hook do cliente (só para viewers)
+
   const clienteAuth = user.role === "viewer" ? useClienteAuth() : null;
 
   const isAdmin = user.role === "admin";
   const isViewer = user.role === "viewer";
 
-  // ✅ NOVO: Status do cliente (null se admin)
   const clienteStatus = clienteAuth?.status || null;
   const clienteExpirado = clienteStatus === "expirado";
 
@@ -50,37 +50,43 @@ export default function Lista({ user }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
 
   /**
-   * Normalizar URL para abrir demo
-   */
-  const normalizeToUrl = (raw?: string): string | null => {
-    if (!raw) return null;
-    const s = raw.trim();
-    try {
-      const withProto = /^https?:\/\//i.test(s) ? s : `https://${s}`;
-      const u = new URL(withProto);
-      return u.toString();
-    } catch {
-      return null;
-    }
-  };
-
-  /**
    * Abrir demo em nova aba
    * ✅ MODIFICADO: Bloqueia se cliente expirado
    */
-  const handleOpenDemo = (demo: Demo) => {
-    // ✅ NOVO: Bloquear se cliente expirado
-    if (isViewer && clienteExpirado) {
-      alert("⚠️ O teu acesso expirou. Solicita renovação para voltar a aceder às demos.");
-      return;
+  const handleOpenDemo = async (demo: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!demo?.url) return;
+    
+    try {
+      const user = getAuthUser();
+      if (!user || !user.id) {
+        alert("Erro: utilizador não autenticado");
+        return;
+      }
+      
+      const CATALOG_URL = window.location.origin.replace(':30300', ':30800');
+      const response = await fetch(`${CATALOG_URL}/api/demos/${demo.id}/open`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cliente_id: user.id
+        })
+      });
+      
+      if (!response.ok) {
+        console.error("Erro ao registar abertura de demo:", await response.text());
+      } else {
+        console.log("Demo aberta registada com sucesso");
+      }
+      
+      window.open(demo.url, "_blank");
+      
+    } catch (error) {
+      console.error("Erro ao abrir demo:", error);
+      window.open(demo.url, "_blank");
     }
-
-    const url = normalizeToUrl(demo.url || "");
-    if (!url) {
-      alert("Esta demo não tem um URL configurado.");
-      return;
-    }
-    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   /**
@@ -368,7 +374,7 @@ export default function Lista({ user }: Props) {
 
   return (
     <div className="page-container">
-      {/* ✅ NOVO: Banner de Expiração (só para viewers) */}
+      {}
       {isViewer && <ExpirationBanner />}
 
       {/* Header */}
@@ -552,7 +558,7 @@ export default function Lista({ user }: Props) {
               cursor: "pointer",
             }}
           >
-            🔄 Limpar filtros
+            Limpar filtros
           </button>
         )}
       </div>
@@ -595,7 +601,6 @@ export default function Lista({ user }: Props) {
         <>
           <div>
             {demosPaginadas.map((demo) => {
-              // ✅ NOVO: Lógica de bloqueio para viewers
               const isViewerClickable = isViewer && demo.url && !clienteExpirado;
               const isDemoBlocked = isViewer && clienteExpirado;
 
@@ -611,9 +616,9 @@ export default function Lista({ user }: Props) {
                     position: "relative",
                     opacity: isDemoBlocked ? 0.5 : 1,
                   }}
-                  onClick={() => {
+                  onClick={(e) => {
                     if (isViewerClickable) {
-                      handleOpenDemo(demo);
+                      handleOpenDemo(demo, e);
                     }
                   }}
                   onMouseEnter={(e) => {
@@ -629,7 +634,7 @@ export default function Lista({ user }: Props) {
                     }
                   }}
                 >
-                  {/* ✅ NOVO: Overlay de bloqueio */}
+                  {}
                   {isDemoBlocked && (
                     <div
                       style={{
@@ -658,7 +663,7 @@ export default function Lista({ user }: Props) {
                           border: "1px solid #ef4444",
                         }}
                       >
-                        🔒 Acesso Expirado
+                        Acesso Expirado
                       </span>
                     </div>
                   )}
@@ -734,7 +739,7 @@ export default function Lista({ user }: Props) {
                       </div>
                     </div>
 
-                    {/* Ações (Admin apenas) */}
+                    {/* Ações */}
                     {isAdmin && (
                       <div
                         style={{
@@ -747,18 +752,19 @@ export default function Lista({ user }: Props) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleOpenDemo(demo);
+                              handleOpenDemo(demo, e);
                             }}
                             style={{
                               padding: "8px 12px",
                               background: "var(--primary)",
+                              color: "white",
                               border: "none",
                               borderRadius: "6px",
-                              color: "white",
                               fontSize: "0.875rem",
                               cursor: "pointer",
+                              whiteSpace: "nowrap",
                             }}
-                            title="Abrir demo"
+                            title="Abrir Demo"
                           >
                             <i className="bi bi-box-arrow-up-right" />
                           </button>
@@ -766,7 +772,7 @@ export default function Lista({ user }: Props) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/demos/${demo.id}/edit`);
+                            navigate(`/demos/${demo.id}/update`);
                           }}
                           style={{
                             padding: "8px 12px",

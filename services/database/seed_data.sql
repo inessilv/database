@@ -143,7 +143,13 @@ INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
      'pg57871@alunos.uminho.pt',
      datetime('now', '+2 days'), 
      'isilva');
-    
+
+INSERT INTO cliente (id, nome, email, data_expiracao, criado_por) VALUES
+    ('cliente008', 
+     'Francisco Afonso', 
+     'francisco-manuel-afonso@hotmail.com',
+     datetime('now', '-2 days'), 
+     'isilva');
 
 -- ============================================================================
 -- LOGS DE ATIVIDADE
@@ -215,6 +221,26 @@ INSERT INTO pedido (id, cliente_id, tipo_pedido, estado, gerido_por) VALUES
 -- Pedido rejeitado
 INSERT INTO pedido (id, cliente_id, tipo_pedido, estado, gerido_por) VALUES
     ('pedido004', 'cliente005', 'renovação', 'rejeitado', 'admin003');
+
+
+-- ============================================================================
+-- SESSÕES DE DEMOS (Métricas de Tempo)
+-- ============================================================================
+
+INSERT OR IGNORE INTO demo_sessions (session_id, cliente_id, demo_id, timestamp_inicio, timestamp_fim, duracao_segundos) VALUES
+('sess-001', 'cliente001', 'demo001', '2025-11-20 10:30:00', '2025-11-20 11:15:00', 2700),
+('sess-002', 'cliente001', 'demo001', '2025-11-21 14:20:00', '2025-11-21 14:52:00', 1920),
+('sess-003', 'cliente001', 'demo003', '2025-11-22 09:15:00', '2025-11-22 09:45:00', 1800),
+('sess-004', 'cliente002', 'demo001', '2025-11-23 11:00:00', '2025-11-23 11:35:00', 2100),
+('sess-005', 'cliente002', 'demo002', '2025-11-24 15:30:00', '2025-11-24 16:25:00', 3300),
+('sess-006', 'cliente002', 'demo003', '2025-11-25 10:00:00', '2025-11-25 10:28:00', 1680),
+('sess-007', 'cliente003', 'demo001', '2025-11-26 13:45:00', '2025-11-26 13:57:00', 720),
+('sess-008', 'cliente005', 'demo005', '2025-11-27 08:30:00', '2025-11-27 09:15:00', 2700);
+
+-- Verificação
+SELECT 'Sessões de demos inseridas:' as status, COUNT(*) as total FROM demo_sessions;
+
+
 
 -- ============================================================================
 -- QUERIES DE VERIFICAÇÃO

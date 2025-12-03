@@ -47,6 +47,10 @@ class ClienteService:
         update_data = cliente.model_dump(exclude_none=True)
         updated = await db_client.update_cliente(cliente_id, update_data)
         return ClienteResponse(**updated)
+    
+    async def revoke_access(self, cliente_id: str) -> None:
+        """Revogar acesso do cliente (expira imediatamente)"""
+        await db_client.delete_cliente(cliente_id)
 
 
 # Singleton instance

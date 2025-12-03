@@ -8,8 +8,10 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClientes } from "../hooks/useClientes";
-import ClienteCard from "../components/ClienteCard";
+import { ClienteCard } from "../components/ClienteCard";
 import ClienteModal from "../components/ClienteModal";
+import ConfirmModal from "../components/ConfirmModal";
+import { clienteService } from "../services/clienteService";
 import type { ClienteCreate, ClienteUpdate } from "../types/Cliente";
 
 type User = { id: string; name: string; role: "admin" | "viewer" };
@@ -51,6 +53,17 @@ export default function Clientes({ user }: Props) {
     isOpen: false,
     mode: "create",
     clienteId: null,
+  });
+
+  // Revoke confirmation state
+  const [revokeConfirm, setRevokeConfirm] = useState<{
+    isOpen: boolean;
+    clienteId: string | null;
+    clienteNome: string | null;
+  }>({
+    isOpen: false,
+    clienteId: null,
+    clienteNome: null,
   });
 
   /**
@@ -171,6 +184,43 @@ export default function Clientes({ user }: Props) {
    */
   const handleViewDetails = (clienteId: string) => {
     navigate(`/clientes/${clienteId}`);
+  };
+
+  /**
+   * Abrir confirmação de revogação
+   */
+  const handleRevokeAccess = (clienteId: string) => {
+    const cliente = clientes.find((c) => c.id === clienteId);
+    if (cliente) {
+      setRevokeConfirm({
+        isOpen: true,
+        clienteId,
+        clienteNome: cliente.nome,
+      });
+    }
+  };
+
+  /**
+   * Confirmar revogação de acesso
+   */
+  const confirmRevokeAccess = async () => {
+    if (!revokeConfirm.clienteId) return;
+
+    try {
+      await clienteService.revokeAccess(revokeConfirm.clienteId);
+      alert("Acesso revogado com sucesso!");
+      await refreshClientes();
+      setRevokeConfirm({ isOpen: false, clienteId: null, clienteNome: null });
+    } catch (err: any) {
+      alert(`Erro ao revogar acesso: ${err.message || "Erro desconhecido"}`);
+    }
+  };
+
+  /**
+   * Cancelar revogação
+   */
+  const cancelRevoke = () => {
+    setRevokeConfirm({ isOpen: false, clienteId: null, clienteNome: null });
   };
 
   /**
@@ -379,7 +429,7 @@ export default function Clientes({ user }: Props) {
           <h1 className="page-title">Lista de Clientes</h1>
           <div style={{ display: "flex", gap: "12px" }}>
             <button onClick={refreshClientes} disabled={loading} className="btn-ghost">
-              {loading ? "A atualizar..." : "🔄 Atualizar"}
+              {loading ? "A atualizar..." : "Atualizar"}
             </button>
             <button className="button" onClick={openCreateModal}>
               + Adicionar Cliente
@@ -461,6 +511,7 @@ export default function Clientes({ user }: Props) {
                   cliente={cliente}
                   onEdit={openEditModal}
                   onViewDetails={handleViewDetails}
+                  onRevokeAccess={handleRevokeAccess}
                 />
               ))}
             </ul>
@@ -493,6 +544,18 @@ export default function Clientes({ user }: Props) {
           onSave={handleSaveCliente}
           loading={modalLoading}
           userId={user.id}
+        />
+
+        {/* Modal de Confirmação de Revogação */}
+        <ConfirmModal
+          isOpen={revokeConfirm.isOpen}
+          title="Revogar Acesso"
+          message={`Tem a certeza que deseja revogar o acesso de "${revokeConfirm.clienteNome}"? Esta ação irá expirar o cliente imediatamente.`}
+          onConfirm={confirmRevokeAccess}
+          onCancel={cancelRevoke}
+          confirmText="Revogar"
+          cancelText="Cancelar"
+          confirmVariant="danger"
         />
       </div>
 

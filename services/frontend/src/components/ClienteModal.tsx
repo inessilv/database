@@ -2,7 +2,6 @@
  * ClienteModal Component
  * 
  * Modal para criar ou editar cliente
- * Segue o padrão do ConfirmModal.tsx
  */
 
 import React, { useState, useEffect } from "react";
@@ -15,7 +14,7 @@ interface ClienteModalProps {
   onClose: () => void;
   onSave: (data: ClienteCreate | ClienteUpdate) => Promise<void>;
   loading?: boolean;
-  userId: string; // ID do admin criador
+  userId: string;
 }
 
 export default function ClienteModal({
@@ -29,7 +28,6 @@ export default function ClienteModal({
 }: ClienteModalProps) {
   const isCreate = mode === "create";
 
-  // Form state
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -38,19 +36,15 @@ export default function ClienteModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  /**
-   * Preencher form ao abrir em modo edição
-   */
   useEffect(() => {
     if (isOpen && mode === "edit" && cliente) {
       setFormData({
         nome: cliente.nome,
         email: cliente.email,
-        data_expiracao: cliente.data_expiracao.split("T")[0], // Formato YYYY-MM-DD
+        data_expiracao: cliente.data_expiracao.split("T")[0],
       });
       setErrors({});
     } else if (isOpen && mode === "create") {
-      // Data de expiração padrão: +30 dias
       const dataExpiracao = new Date();
       dataExpiracao.setDate(dataExpiracao.getDate() + 30);
       
@@ -63,9 +57,6 @@ export default function ClienteModal({
     }
   }, [isOpen, mode, cliente]);
 
-  /**
-   * Validação do formulário
-   */
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -87,9 +78,6 @@ export default function ClienteModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Submit do formulário
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -97,7 +85,6 @@ export default function ClienteModal({
 
     try {
       if (isCreate) {
-        // Criar cliente
         const dataRegisto = new Date().toISOString();
         const dataExpiracao = new Date(formData.data_expiracao).toISOString();
 
@@ -111,7 +98,6 @@ export default function ClienteModal({
 
         await onSave(createData);
       } else {
-        // Editar cliente
         const updateData: ClienteUpdate = {
           nome: formData.nome.trim(),
           email: formData.email.trim(),
@@ -127,18 +113,12 @@ export default function ClienteModal({
     }
   };
 
-  /**
-   * Fechar ao clicar no backdrop
-   */
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !loading) {
       onClose();
     }
   };
 
-  /**
-   * Fechar ao pressionar ESC
-   */
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !loading) {
@@ -160,207 +140,360 @@ export default function ClienteModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
-      onClick={handleBackdropClick}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        backdropFilter: "blur(4px)",
-        zIndex: 9999,
-      }}
-    >
+    <>
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
-        onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: "var(--bg-2)",
-          borderRadius: "12px",
-          boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
-          maxWidth: "500px",
-          width: "100%",
-          margin: "0 16px",
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.65)",
+          backdropFilter: "blur(5px)",
+          WebkitBackdropFilter: "blur(5px)",
+          zIndex: 9998,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          animation: "fadeIn 0.2s ease-out",
         }}
+        onClick={handleBackdropClick}
       >
-        {/* Header */}
         <div
-          className="px-6 py-4 border-b"
           style={{
-            padding: "20px 24px",
-            borderBottom: "1px solid var(--stroke)",
+            position: "relative",
+            width: "90%",
+            maxWidth: "500px",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            animation: "scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <h3
-            className="text-lg font-bold"
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "700",
-              color: "var(--text)",
-            }}
-          >
-            {isCreate ? "Adicionar Novo Cliente" : "Editar Cliente"}
-          </h3>
-        </div>
-
-        {/* Body - Formulário */}
-        <form onSubmit={handleSubmit}>
           <div
-            className="px-6 py-4"
             style={{
-              padding: "24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
+              backgroundColor: "var(--bg-2)",
+              borderRadius: "14px",
+              border: "1px solid var(--stroke)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
             }}
           >
-            {/* Nome */}
-            <div className="field">
-              <label className="label">
-                Nome <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={formData.nome}
-                onChange={(e) =>
-                  setFormData({ ...formData, nome: e.target.value })
-                }
-                placeholder="Ex.: João Silva"
-                disabled={loading}
-              />
-              {errors.nome && (
-                <span
-                  className="helper-error"
-                  style={{ color: "#ef4444", fontSize: "0.875rem" }}
-                >
-                  {errors.nome}
-                </span>
-              )}
-            </div>
-
-            {/* Email */}
-            <div className="field">
-              <label className="label">
-                Email <span style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <input
-                type="email"
-                className="input"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="Ex.: joao.silva@empresa.pt"
-                disabled={loading}
-              />
-              {errors.email && (
-                <span
-                  className="helper-error"
-                  style={{ color: "#ef4444", fontSize: "0.875rem" }}
-                >
-                  {errors.email}
-                </span>
-              )}
-            </div>
-
-            {/* Data de Expiração (só na criação) */}
-            {isCreate && (
-              <div className="field">
-                <label className="label">
-                  Data de Expiração <span style={{ color: "#ef4444" }}>*</span>
-                </label>
-                <input
-                  type="date"
-                  className="input"
-                  value={formData.data_expiracao}
-                  onChange={(e) =>
-                    setFormData({ ...formData, data_expiracao: e.target.value })
-                  }
-                  disabled={loading}
-                />
-                {errors.data_expiracao && (
-                  <span
-                    className="helper-error"
-                    style={{ color: "#ef4444", fontSize: "0.875rem" }}
-                  >
-                    {errors.data_expiracao}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Footer com ações */}
-          <div
-            className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3"
-            style={{
-              padding: "16px 24px",
-              backgroundColor: "var(--bg)",
-              borderTop: "1px solid var(--stroke)",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "12px",
-            }}
-          >
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="btn-ghost"
+            <div
               style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
+                padding: "24px 28px 20px 28px",
+                borderBottom: "1px solid var(--stroke)",
+                backgroundColor: "var(--bg)",
               }}
             >
-              Cancelar
-            </button>
+              <h3
+                style={{
+                  fontSize: "1.3rem",
+                  fontWeight: "700",
+                  color: "var(--text)",
+                  margin: 0,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {isCreate ? "Adicionar Novo Cliente" : "Editar Cliente"}
+              </h3>
+            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="button"
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-              }}
-            >
-              {loading ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <div
+            <form onSubmit={handleSubmit}>
+              <div
+                style={{
+                  padding: "28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
+                <div>
+                  <label
                     style={{
-                      width: "16px",
-                      height: "16px",
-                      border: "2px solid white",
-                      borderTopColor: "transparent",
-                      borderRadius: "50%",
-                      animation: "spin 0.6s linear infinite",
+                      display: "block",
+                      fontSize: "0.875rem",
+                      fontWeight: "600",
+                      marginBottom: "8px",
+                      color: "var(--text)",
+                    }}
+                  >
+                    Nome <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nome: e.target.value })
+                    }
+                    placeholder="Ex.: João Silva"
+                    disabled={loading}
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px",
+                      border: `1px solid ${errors.nome ? "#ef4444" : "var(--stroke)"}`,
+                      borderRadius: "8px",
+                      fontSize: "0.95rem",
+                      backgroundColor: "var(--bg)",
+                      color: "var(--text)",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => {
+                      if (!errors.nome) {
+                        e.target.style.borderColor = "var(--primary)";
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.nome) {
+                        e.target.style.borderColor = "var(--stroke)";
+                      }
                     }}
                   />
-                  A guardar...
+                  {errors.nome && (
+                    <span
+                      style={{
+                        display: "block",
+                        marginTop: "6px",
+                        fontSize: "0.75rem",
+                        color: "#ef4444",
+                      }}
+                    >
+                      {errors.nome}
+                    </span>
+                  )}
                 </div>
-              ) : isCreate ? (
-                "Criar Cliente"
-              ) : (
-                "Guardar Alterações"
-              )}
-            </button>
+
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.875rem",
+                      fontWeight: "600",
+                      marginBottom: "8px",
+                      color: "var(--text)",
+                    }}
+                  >
+                    Email <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    placeholder="Ex.: joao.silva@empresa.pt"
+                    disabled={loading}
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px",
+                      border: `1px solid ${errors.email ? "#ef4444" : "var(--stroke)"}`,
+                      borderRadius: "8px",
+                      fontSize: "0.95rem",
+                      backgroundColor: "var(--bg)",
+                      color: "var(--text)",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => {
+                      if (!errors.email) {
+                        e.target.style.borderColor = "var(--primary)";
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.email) {
+                        e.target.style.borderColor = "var(--stroke)";
+                      }
+                    }}
+                  />
+                  {errors.email && (
+                    <span
+                      style={{
+                        display: "block",
+                        marginTop: "6px",
+                        fontSize: "0.75rem",
+                        color: "#ef4444",
+                      }}
+                    >
+                      {errors.email}
+                    </span>
+                  )}
+                </div>
+
+                {isCreate && (
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                        marginBottom: "8px",
+                        color: "var(--text)",
+                      }}
+                    >
+                      Data de Expiração <span style={{ color: "#ef4444" }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.data_expiracao}
+                      onChange={(e) =>
+                        setFormData({ ...formData, data_expiracao: e.target.value })
+                      }
+                      disabled={loading}
+                      style={{
+                        width: "100%",
+                        padding: "11px 14px",
+                        border: `1px solid ${
+                          errors.data_expiracao ? "#ef4444" : "var(--stroke)"
+                        }`,
+                        borderRadius: "8px",
+                        fontSize: "0.95rem",
+                        backgroundColor: "var(--bg)",
+                        color: "var(--text)",
+                        outline: "none",
+                        transition: "border-color 0.2s",
+                      }}
+                      onFocus={(e) => {
+                        if (!errors.data_expiracao) {
+                          e.target.style.borderColor = "var(--primary)";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.data_expiracao) {
+                          e.target.style.borderColor = "var(--stroke)";
+                        }
+                      }}
+                    />
+                    {errors.data_expiracao && (
+                      <span
+                        style={{
+                          display: "block",
+                          marginTop: "6px",
+                          fontSize: "0.75rem",
+                          color: "#ef4444",
+                        }}
+                      >
+                        {errors.data_expiracao}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  padding: "18px 28px 26px 28px",
+                  borderTop: "1px solid var(--stroke)",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="btn-ghost"
+                  style={{
+                    padding: "11px 22px",
+                    fontSize: "0.95rem",
+                    fontWeight: "600",
+                    borderRadius: "10px",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    opacity: loading ? 0.5 : 1,
+                  }}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    padding: "11px 26px",
+                    fontSize: "0.95rem",
+                    fontWeight: "600",
+                    border: "none",
+                    borderRadius: "10px",
+                    backgroundColor: "var(--primary)",
+                    color: "white",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    transition: "all 0.2s ease",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    minWidth: "140px",
+                    opacity: loading ? 0.75 : 1,
+                    boxShadow: loading ? "none" : "0 2px 8px rgba(0, 0, 0, 0.15)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.opacity = "0.9";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.2)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.opacity = "1";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15)";
+                    }
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <div
+                        style={{
+                          width: "17px",
+                          height: "17px",
+                          border: "2.5px solid white",
+                          borderTopColor: "transparent",
+                          borderRadius: "50%",
+                          animation: "spin 0.65s linear infinite",
+                        }}
+                      />
+                      A guardar...
+                    </>
+                  ) : isCreate ? (
+                    "Criar Cliente"
+                  ) : (
+                    "Guardar Alterações"
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
 
-      {/* CSS da animação de loading */}
       <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.92);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
         @keyframes spin {
-          to { transform: rotate(360deg); }
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
-    </div>
+    </>
   );
 }

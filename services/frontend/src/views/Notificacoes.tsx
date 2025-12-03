@@ -342,7 +342,7 @@ export default function Notificacoes({ user }: Props) {
           <h1 className="page-title">Notificações</h1>
           <div style={{ display: "flex", gap: "12px" }}>
             <button onClick={refreshPedidos} disabled={loading} className="btn-ghost">
-              {loading ? "A atualizar..." : "🔄 Atualizar"}
+              {loading ? "A atualizar..." : "Atualizar"}
             </button>
           </div>
         </div>
@@ -445,7 +445,7 @@ export default function Notificacoes({ user }: Props) {
           confirmText={
             confirmModal.action === "aprovar" ? "Aprovar" : "Rejeitar"
           }
-          confirmColor={confirmModal.action === "aprovar" ? "green" : "red"}
+          confirmVariant={confirmModal.action === "aprovar" ? "success" : "danger"}
           loading={actionLoading}
         />
       </div>
